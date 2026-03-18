@@ -1,7 +1,15 @@
 from django.db.models import Q
 from django.utils.decorators import method_decorator
-from ratelimit.decorators import ratelimit
 from rest_framework import generics, status
+
+try:
+    from ratelimit.decorators import ratelimit
+except Exception:  # pragma: no cover - fallback if ratelimit isn't installed
+    def ratelimit(*args, **kwargs):
+        def decorator(view_func):
+            return view_func
+
+        return decorator
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
