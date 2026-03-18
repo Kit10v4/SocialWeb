@@ -188,11 +188,11 @@ export default function PostCard({ post: initialPost, onDelete }) {
     try {
       await postAPI.toggleLike(post.id);
     } catch {
-      // Revert on error
+      // Revert on error: undo the optimistic change
       setPost((p) => ({
         ...p,
         is_liked: wasLiked,
-        like_count: wasLiked ? p.like_count + 1 : p.like_count - 1,
+        like_count: p.like_count + (wasLiked ? 1 : -1),
       }));
     }
   }, [post.id, post.is_liked]);
@@ -335,7 +335,7 @@ export default function PostCard({ post: initialPost, onDelete }) {
                 post.is_liked ? "fill-blue-600" : ""
               }`}
             />
-            <span>{post.like_count > 0 ? post.like_count : ""} Thích</span>
+            <span>{post.like_count > 0 ? `${post.like_count} ` : ""}Thích</span>
           </button>
 
           {/* Comment */}

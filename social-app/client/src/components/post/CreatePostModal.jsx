@@ -45,15 +45,17 @@ export default function CreatePostModal({ onClose, onCreated }) {
   // ── Image handling ─────────────────────────────────────────────────────
   const handleImageSelect = useCallback((e) => {
     const files = Array.from(e.target.files || []);
-    const remaining = MAX_IMAGES - images.length;
-    const toAdd = files.slice(0, remaining).map((file) => ({
-      file,
-      preview: URL.createObjectURL(file),
-    }));
-    setImages((prev) => [...prev, ...toAdd]);
+    setImages((prev) => {
+      const remaining = MAX_IMAGES - prev.length;
+      const toAdd = files.slice(0, remaining).map((file) => ({
+        file,
+        preview: URL.createObjectURL(file),
+      }));
+      return [...prev, ...toAdd];
+    });
     // reset input so the same file can be re-selected
     if (fileInputRef.current) fileInputRef.current.value = "";
-  }, [images.length]);
+  }, []);
 
   const removeImage = useCallback((index) => {
     setImages((prev) => {

@@ -280,7 +280,8 @@ export default function CommentSection({ postId, commentCount, isOpen }) {
         );
       } else {
         setComments((prev) => prev.filter((c) => c.id !== commentId));
-        setVisibleCount((v) => Math.max(INITIAL_VISIBLE, v - 1));
+        // Shrink visible count only if we were showing the deleted comment
+        setVisibleCount((v) => (v > INITIAL_VISIBLE ? v - 1 : v));
       }
     } catch {
       // silently ignore
