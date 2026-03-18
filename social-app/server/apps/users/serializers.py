@@ -137,6 +137,27 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = ("username", "bio", "avatar", "cover_photo", "date_of_birth")
 
+    def _validate_image(self, image):
+        if not image:
+            return image
+        max_size = 5 * 1024 * 1024  # 5MB
+        allowed_types = {"image/jpeg", "image/png", "image/webp"}
+        content_type = getattr(image, "content_type", "")
+        size = getattr(image, "size", 0)
+        if size > max_size:
+            raise serializers.ValidationError("Image must be <= 5MB.")
+        if content_type not in allowed_types:
+            raise serializers.ValidationError(
+                "Unsupported image type. Only JPG, PNG, WEBP are allowed."
+            )
+        return image
+
+    def validate_avatar(self, value):
+        return self._validate_image(value)
+
+    def validate_cover_photo(self, value):
+        return self._validate_image(value)
+
     def validate_username(self, value):
         user = self.instance
         if User.objects.filter(username=value).exclude(pk=user.pk).exists():

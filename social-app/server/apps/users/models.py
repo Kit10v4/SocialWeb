@@ -47,6 +47,9 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["created_at"]),
+        ]
 
     def __str__(self):
         return self.username
@@ -76,6 +79,10 @@ class Friendship(models.Model):
     class Meta:
         unique_together = ("from_user", "to_user")
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["from_user", "status"]),
+            models.Index(fields=["to_user", "status"]),
+        ]
 
     def __str__(self):
         return f"{self.from_user} → {self.to_user} ({self.status})"

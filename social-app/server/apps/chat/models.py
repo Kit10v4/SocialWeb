@@ -2,6 +2,7 @@ import uuid
 
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 
 class Conversation(models.Model):
@@ -25,6 +26,11 @@ class Conversation(models.Model):
 class Message(models.Model):
     """A single message inside a conversation."""
 
+    class MessageType(models.TextChoices):
+        TEXT = "text", "Text"
+        IMAGE = "image", "Image"
+        FILE = "file", "File"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     conversation = models.ForeignKey(
         Conversation, on_delete=models.CASCADE, related_name="messages"
@@ -32,7 +38,10 @@ class Message(models.Model):
     sender = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="messages_sent"
     )
-    content = models.TextField(max_length=3000)
+    content = models.TextField(max_length=3000, blank=True)
+    message_type = models.CharField(
+        max_length=10, choices=MessageType.choices, default=MessageType.TEXT
+    )
     image = models.ImageField(upload_to="chat/", blank=True)
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -41,4 +50,14 @@ class Message(models.Model):
         ordering = ["created_at"]
 
     def __str__(self):
-        return f"{self.sender.username}: {self.content[:40]}"
+        base = self.content or "[attachment]"
+        return f"{self.sender.username}: {base[:40]}"
+
+    def save(self, *args, **kwargs):
+        is_new = self._state.adding
+        super().save(*args, **kwargs)
+        # When a new message is created, bump the parent conversation's updated_at
+        if is_new and self.conversation_id:
+            Conversation.objects.filter(pk=self.conversation_id).update(
+                updated_at=timezone.now()
+            )

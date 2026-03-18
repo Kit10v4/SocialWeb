@@ -1,4 +1,6 @@
 from django.db.models import Q
+from django.utils.decorators import method_decorator
+from ratelimit.decorators import ratelimit
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -28,6 +30,10 @@ def _get_tokens(user):
     return {"access": str(refresh.access_token), "refresh": str(refresh)}
 
 
+@method_decorator(
+    ratelimit(key="ip", rate="3/m", method="POST", block=True),
+    name="dispatch",
+)
 class RegisterView(APIView):
     permission_classes = (AllowAny,)
 
@@ -42,6 +48,10 @@ class RegisterView(APIView):
         )
 
 
+@method_decorator(
+    ratelimit(key="ip", rate="5/m", method="POST", block=True),
+    name="dispatch",
+)
 class LoginView(APIView):
     permission_classes = (AllowAny,)
 

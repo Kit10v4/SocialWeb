@@ -15,14 +15,24 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 django_asgi_app = get_asgi_application()
 
 # Import websocket routes after Django setup
-# from apps.chat.routing import websocket_urlpatterns  # uncomment when ready
+from apps.chat.middleware import JWTAuthMiddleware
+from apps.chat.routing import websocket_urlpatterns as chat_websocket_urlpatterns
+from apps.notifications.routing import (
+    websocket_urlpatterns as notifications_websocket_urlpatterns,
+)
+
+combined_websocket_urlpatterns = [
+    *chat_websocket_urlpatterns,
+    *notifications_websocket_urlpatterns,
+]
 
 application = ProtocolTypeRouter(
     {
         "http": django_asgi_app,
-        # Uncomment below when you create websocket routes:
-        # "websocket": AuthMiddlewareStack(
-        #     URLRouter(websocket_urlpatterns)
-        # ),
+        "websocket": JWTAuthMiddleware(
+            AuthMiddlewareStack(
+                URLRouter(combined_websocket_urlpatterns)
+            )
+        ),
     }
 )

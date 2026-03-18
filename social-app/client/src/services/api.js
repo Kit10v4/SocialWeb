@@ -129,4 +129,25 @@ export const commentAPI = {
   delete: (commentId) => api.delete(`/comments/${commentId}/`),
 };
 
+// ── Feed API helpers ────────────────────────────────────────────────────
+export const feedAPI = {
+  getFeed: ({ cursor } = {}) =>
+    api.get("/feed/", {
+      params: cursor ? { cursor } : undefined,
+    }),
+  getStories: () => api.get("/feed/stories/"),
+  getTrending: () => api.get("/posts/trending/"),
+};
+
+// ── Chat API helpers ────────────────────────────────────────────────────
+export const chatAPI = {
+  listConversations: () => api.get("/conversations/"),
+  createConversation: (userId) =>
+    api.post("/conversations/", { user_id: userId }),
+  listMessages: (conversationId, params) =>
+    api.get(`/conversations/${conversationId}/messages/`, { params }),
+  markRead: (conversationId) =>
+    api.post(`/conversations/${conversationId}/read/`),
+};
+
 export default api;

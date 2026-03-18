@@ -1,4 +1,5 @@
 from rest_framework import serializers
+import bleach
 
 from apps.users.serializers import UserMiniSerializer
 
@@ -107,15 +108,24 @@ class PostSerializer(serializers.ModelSerializer):
     # -- computed fields ---------------------------------------------------
 
     def get_like_count(self, obj):
+        # Prefer annotated value when available to avoid extra queries
+        if hasattr(obj, "like_count"):
+            return obj.like_count
         return obj.likes.count()
 
     def get_comment_count(self, obj):
+        # Prefer annotated value when available to avoid extra queries
+        if hasattr(obj, "comment_count"):
+            return obj.comment_count
         return obj.comments.count()
 
     def get_is_liked(self, obj):
         request = self.context.get("request")
         if not request or not request.user.is_authenticated:
             return False
+        # Use annotated flag when provided by queryset
+        if hasattr(obj, "is_liked"):
+            return bool(obj.is_liked)
         return obj.likes.filter(user=request.user).exists()
 
     def get_is_saved(self, obj):
@@ -139,13 +149,41 @@ class CreatePostSerializer(serializers.ModelSerializer):
         model = Post
         fields = ("content", "images", "privacy")
 
+    def validate_images(self, images):
+        max_size = 5 * 1024 * 1024  # 5MB
+        allowed_types = {"image/jpeg", "image/png", "image/webp"}
+        for img in images or []:
+            content_type = getattr(img, "content_type", "")
+            size = getattr(img, "size", 0)
+            if size > max_size:
+                raise serializers.ValidationError("Each image must be <= 5MB.")
+            if content_type not in allowed_types:
+                raise serializers.ValidationError(
+                    "Unsupported image type. Only JPG, PNG, WEBP are allowed."
+                )
+        return images
+
     def validate(self, data):
-        content = data.get("content", "").strip()
+        content = data.get("content", "") or ""
+        content = content.strip()
         images = data.get("images", [])
+
         if not content and not images:
             raise serializers.ValidationError(
                 "Post must have either content or at least one image."
             )
+
+        if content:
+            allowed_tags = ["b", "i", "strong", "em", "a", "br", "p"]
+            allowed_attrs = {"a": ["href", "title", "rel"]}
+            cleaned = bleach.clean(
+                content,
+                tags=allowed_tags,
+                attributes=allowed_attrs,
+                strip=True,
+            )
+            data["content"] = cleaned
+
         return data
 
     def create(self, validated_data):

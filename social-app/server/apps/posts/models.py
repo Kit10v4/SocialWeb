@@ -27,6 +27,10 @@ class Post(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["author", "created_at"]),
+            models.Index(fields=["created_at"]),
+        ]
 
     def __str__(self):
         return f"{self.author.username}: {self.content[:50] or '[images]'}"
@@ -59,6 +63,9 @@ class Like(models.Model):
 
     class Meta:
         unique_together = ("post", "user")
+        indexes = [
+            models.Index(fields=["post", "created_at"]),
+        ]
 
     def __str__(self):
         return f"{self.user.username} likes {self.post_id}"
@@ -80,6 +87,9 @@ class Comment(models.Model):
 
     class Meta:
         ordering = ["created_at"]
+        indexes = [
+            models.Index(fields=["post", "created_at"]),
+        ]
 
     def __str__(self):
         return f"{self.author.username}: {self.content[:40]}"

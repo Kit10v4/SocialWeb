@@ -1,4 +1,6 @@
 from django.db.models import Q
+from django.utils.decorators import method_decorator
+from ratelimit.decorators import ratelimit
 from rest_framework import generics, serializers as drf_serializers, status
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
@@ -21,6 +23,10 @@ from .serializers import (
 # Post CRUD
 # ===========================================================================
 
+@method_decorator(
+    ratelimit(key="ip", rate="20/m", method="POST", block=True),
+    name="dispatch",
+)
 class PostListCreateView(generics.ListCreateAPIView):
     """
     GET  /api/posts/       — list posts (filtered by privacy + friendship)
