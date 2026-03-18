@@ -176,9 +176,20 @@ SIMPLE_JWT = {
 # CORS
 # ---------------------------------------------------------------------------
 
+# Parse CORS origins from environment (comma-separated)
+_cors_origins = os.getenv("CORS_ALLOWED_ORIGINS", "")
 CORS_ALLOWED_ORIGINS = [
-    os.getenv("FRONTEND_URL", "http://localhost:5173"),
+    origin.strip()
+    for origin in _cors_origins.split(",")
+    if origin.strip()
 ]
+# Fallback for development
+if not CORS_ALLOWED_ORIGINS:
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+
 CORS_ALLOW_CREDENTIALS = True
 
 

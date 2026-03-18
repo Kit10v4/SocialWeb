@@ -69,9 +69,16 @@ export default function NotificationBell() {
     const token = localStorage.getItem("access_token");
     if (!token) return;
 
-    const loc = window.location;
-    const protocol = loc.protocol === "https:" ? "wss" : "ws";
-    const base = `${protocol}://${loc.host}`;
+    // Use VITE_WS_URL for production, fallback to current host for dev
+    const wsBase = import.meta.env.VITE_WS_URL;
+    let base;
+    if (wsBase) {
+      base = wsBase;
+    } else {
+      const loc = window.location;
+      const protocol = loc.protocol === "https:" ? "wss" : "ws";
+      base = `${protocol}://${loc.host}`;
+    }
     const url = new URL(`${base}/ws/notifications/`);
     url.searchParams.set("token", token);
 
