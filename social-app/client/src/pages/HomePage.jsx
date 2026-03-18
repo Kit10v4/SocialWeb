@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Home, MessageCircle, Users, LogOut } from "lucide-react";
+import { Home, MessageCircle, Users, LogOut, Bell } from "lucide-react";
 import NotificationBell from "../components/shared/NotificationBell";
 
 import { useAuth } from "../context/AuthContext";
