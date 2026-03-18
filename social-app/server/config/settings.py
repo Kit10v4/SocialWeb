@@ -37,7 +37,6 @@ INSTALLED_APPS = [
     "channels",
     "cloudinary",
     "cloudinary_storage",
-    "ratelimit",
     # Local apps
     "apps.users",
     "apps.posts",
