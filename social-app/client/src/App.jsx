@@ -11,6 +11,7 @@ const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const MessagesPage = lazy(() => import("./pages/MessagesPage"));
 const SearchPage = lazy(() => import("./pages/SearchPage"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
+const PostDetailPage = lazy(() => import("./pages/PostDetailPage"));
 
 // Loading spinner component
 function PageLoader() {
@@ -79,6 +80,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <MessagesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/post/:postId"
+          element={
+            <ProtectedRoute>
+              <PostDetailPage />
             </ProtectedRoute>
           }
         />

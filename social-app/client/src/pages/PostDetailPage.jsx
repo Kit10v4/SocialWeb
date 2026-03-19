@@ -1,0 +1,161 @@
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+
+import { useAuth } from "../context/AuthContext";
+import { commentAPI, postAPI } from "../services/api";
+import PostCard, { PostCardSkeleton } from "../components/PostCard";
+import CommentSection from "../components/CommentSection";
+import NotFoundPage from "./NotFoundPage";
+
+function transformComment(comment) {
+  if (!comment) return null;
+  return {
+    id: comment.id,
+    content: comment.content,
+    createdAt: comment.created_at,
+    author: {
+      id: comment.author?.id,
+      name: comment.author?.username,
+      avatarUrl: comment.author?.avatar,
+    },
+    replies: Array.isArray(comment.replies)
+      ? comment.replies.map(transformComment).filter(Boolean)
+      : [],
+  };
+}
+
+export default function PostDetailPage() {
+  const { postId } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const {
+    data: post,
+    isLoading: isPostLoading,
+    isError: isPostError,
+    error: postError,
+  } = useQuery({
+    queryKey: ["post", postId],
+    queryFn: async () => {
+      const res = await postAPI.get(postId);
+      return res.data;
+    },
+    enabled: !!postId,
+  });
+
+  const {
+    data: commentsData,
+    isLoading: isCommentsLoading,
+    isError: isCommentsError,
+    error: commentsError,
+  } = useQuery({
+    queryKey: ["post-comments", postId],
+    queryFn: async () => {
+      const res = await commentAPI.list(postId, { page_size: 1000 });
+      return Array.isArray(res.data) ? res.data : res.data.results ?? [];
+    },
+    enabled: !!postId,
+  });
+
+  const [comments, setComments] = useState([]);
+
+  useEffect(() => {
+    setComments(Array.isArray(commentsData) ? commentsData : []);
+  }, [commentsData]);
+
+  const transformedComments = useMemo(
+    () => comments.map(transformComment).filter(Boolean),
+    [comments]
+  );
+
+  const handleSubmitComment = async (text, parentId = null) => {
+    if (!postId) return;
+    const res = await commentAPI.create(postId, { content: text, parent: parentId });
+    const newComment = res.data;
+    if (parentId) {
+      setComments((prev) =>
+        prev.map((c) =>
+          c.id === parentId ? { ...c, replies: [...(c.replies || []), newComment] } : c
+        )
+      );
+    } else {
+      setComments((prev) => [newComment, ...prev]);
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    await commentAPI.delete(commentId);
+    let wasTopLevel = false;
+    setComments((prev) => {
+      const filtered = prev.filter((c) => {
+        if (c.id === commentId) {
+          wasTopLevel = true;
+          return false;
+        }
+        return true;
+      });
+      if (!wasTopLevel) {
+        return filtered.map((c) => ({
+          ...c,
+          replies: (c.replies || []).filter((r) => r.id !== commentId),
+        }));
+      }
+      return filtered;
+    });
+  };
+
+  if (isPostError && postError?.response?.status === 404) {
+    return <NotFoundPage />;
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100 pb-16 md:pb-0">
+      <div className="max-w-3xl mx-auto px-2 sm:px-4 py-4">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="mb-3 text-sm font-semibold text-blue-600 hover:underline"
+        >
+          ← Quay lại
+        </button>
+
+        {isPostLoading && (
+          <div className="space-y-3">
+            <PostCardSkeleton />
+          </div>
+        )}
+
+        {!isPostLoading && post && (
+          <>
+            <PostCard
+              post={post}
+              onLike={(id) => postAPI.toggleLike(id)}
+              onBookmark={(id) => postAPI.toggleSave(id)}
+              onDelete={() => navigate(-1)}
+            />
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+              <CommentSection
+                comments={transformedComments}
+                currentUserId={user?.id}
+                currentUserAvatar={user?.avatar}
+                onSubmitComment={handleSubmitComment}
+                onDeleteComment={handleDeleteComment}
+                isLoading={isCommentsLoading}
+                error={isCommentsError ? commentsError?.message : ""}
+                showAll
+              />
+            </div>
+          </>
+        )}
+
+        {isPostError && !isPostLoading && postError?.response?.status !== 404 && (
+          <div className="bg-white rounded-2xl border border-red-100 text-red-600 text-sm p-4">
+            Không thể tải bài viết.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

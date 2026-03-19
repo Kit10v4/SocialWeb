@@ -128,7 +128,7 @@ export const postAPI = {
 
 // ── Comments API helpers ──────────────────────────────────────────────
 export const commentAPI = {
-  list: (postId) => api.get(`/posts/${postId}/comments/`),
+  list: (postId, params) => api.get(`/posts/${postId}/comments/`, { params }),
   create: (postId, data) => api.post(`/posts/${postId}/comments/`, data),
   delete: (commentId) => api.delete(`/comments/${commentId}/`),
 };

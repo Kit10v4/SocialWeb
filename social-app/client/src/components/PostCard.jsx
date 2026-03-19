@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { commentAPI, postAPI } from "../services/api";
@@ -132,6 +133,7 @@ export default function PostCard({
 }) {
   const { user } = useAuth();
   const { showToast } = useToast();
+  const navigate = useNavigate();
 
   const [localLiked, setLocalLiked] = useState(post?.is_liked || false);
   const [localLikeCount, setLocalLikeCount] = useState(post?.like_count || 0);
@@ -276,8 +278,19 @@ export default function PostCard({
     onCommentClick?.(post.id);
   };
 
-  const handleShare = () => {
+  const handleOpenDetail = () => {
+    if (!post?.id) return;
+    navigate(`/post/${post.id}`);
+  };
+
+  const handleShare = async () => {
     if (!post) return;
+    const url = `${window.location.origin}/post/${post.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      window.prompt("Sao chép liên kết:", url);
+    }
     onShare?.(post.id);
   };
 
@@ -419,7 +432,13 @@ export default function PostCard({
               <p className="font-semibold text-sm sm:text-base">{post.author?.username}</p>
             </div>
             <div className="flex items-center gap-1 text-xs text-gray-500">
-              <span>{formatRelativeTime(post.created_at)}</span>
+              <button
+                type="button"
+                onClick={handleOpenDetail}
+                className="hover:underline"
+              >
+                {formatRelativeTime(post.created_at)}
+              </button>
               {localPrivacy && <span>· {localPrivacy}</span>}
               {post.is_trending && (
                 <span className="ml-1 text-[10px] text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-full">
@@ -513,7 +532,7 @@ export default function PostCard({
               {localCommentCount > 0 && (
                 <button
                   type="button"
-                  onClick={handleCommentClick}
+                  onClick={handleOpenDetail}
                   className="hover:underline"
                 >
                   {localCommentCount} bình luận

@@ -39,17 +39,18 @@ export default function CommentSection({
   onDeleteComment,
   isLoading = false,
   error,
+  showAll = false,
 }) {
   const [input, setInput] = useState("");
   const [replyTo, setReplyTo] = useState(null); // comment id
   const [pending, setPending] = useState(false);
   const [deletingIds, setDeletingIds] = useState(new Set());
   const [internalError, setInternalError] = useState("");
-  const [visibleCount, setVisibleCount] = useState(3);
+  const [visibleCount, setVisibleCount] = useState(showAll ? comments.length : 3);
 
   useEffect(() => {
-    setVisibleCount(3);
-  }, [comments?.length]);
+    setVisibleCount(showAll ? comments.length : 3);
+  }, [comments?.length, showAll]);
 
   const handleKeyDown = async (e, parentId = null) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -95,7 +96,7 @@ export default function CommentSection({
   };
 
   const toShow = comments.slice(0, visibleCount);
-  const remaining = Math.max(0, comments.length - visibleCount);
+  const remaining = showAll ? 0 : Math.max(0, comments.length - visibleCount);
 
   return (
     <section className="mt-2">
