@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { MessageCircle } from "lucide-react";
 import { formatDistanceToNowStrict, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
 
@@ -18,12 +19,30 @@ export default function ConversationList({
   conversations,
   activeId,
   onSelect,
+  onNewChat,
   search,
   onSearchChange,
   loading,
   error,
 }) {
   const { user } = useAuth();
+  const [onlineUsers, setOnlineUsers] = useState(() => new Set());
+
+  useEffect(() => {
+    const handler = (event) => {
+      const { userId, online } = event.detail || {};
+      if (!userId) return;
+      setOnlineUsers((prev) => {
+        const next = new Set(prev);
+        if (online) next.add(String(userId));
+        else next.delete(String(userId));
+        return next;
+      });
+    };
+
+    window.addEventListener("chat:online-status", handler);
+    return () => window.removeEventListener("chat:online-status", handler);
+  }, []);
 
   const filtered = useMemo(() => {
     const list = conversations || [];
@@ -38,7 +57,17 @@ export default function ConversationList({
 
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-      <div className="p-3 border-b border-gray-100">
+      <div className="p-3 border-b border-gray-100 space-y-2">
+        {onNewChat && (
+          <button
+            type="button"
+            onClick={onNewChat}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition"
+          >
+            <MessageCircle className="w-4 h-4" />
+            Tin nhắn mới
+          </button>
+        )}
         <input
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
@@ -62,7 +91,7 @@ export default function ConversationList({
 
         {!loading && !error && filtered.length === 0 && (
           <div className="p-4 text-center text-xs text-gray-400">
-            Không có cuộc trò chuyện nào.
+            Chưa có tin nhắn. Bắt đầu cuộc trò chuyện mới!
           </div>
         )}
 
@@ -73,6 +102,7 @@ export default function ConversationList({
                 key={conv.id}
                 conversation={conv}
                 active={conv.id === activeId}
+                onlineUsers={onlineUsers}
                 onClick={() => onSelect(conv)}
               />
             ))}
@@ -83,16 +113,18 @@ export default function ConversationList({
   );
 }
 
-function ConversationItem({ conversation, active, onClick }) {
+function ConversationItem({ conversation, active, onlineUsers, onClick }) {
   const { user } = useAuth();
   const others = (conversation.participants || []).filter((p) => p.id !== user?.id);
   const name = others.map((p) => p.username).join(", ") || user?.username || "";
   const last = conversation.last_message;
   const preview = last?.content || (last ? "[Tệp đính kèm]" : "Bắt đầu cuộc trò chuyện");
   const time = formatTime(last?.created_at || conversation.updated_at);
+  const isOnline = others.some((p) => onlineUsers?.has?.(String(p.id)));
 
   // Very naive unread badge: 1 if last message is unread and from other user
-  const unreadCount = last && !last.is_read && last.sender?.id !== user?.id ? 1 : 0;
+  const unreadCount =
+    active || !last || last.is_read || last.sender?.id === user?.id ? 0 : 1;
 
   return (
     <li
@@ -113,8 +145,11 @@ function ConversationItem({ conversation, active, onClick }) {
             <span>{name[0]?.toUpperCase()}</span>
           )}
         </div>
-        {/* Online indicator placeholder (always green for demo) */}
-        <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white" />
+        <span
+          className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white ${
+            isOnline ? "bg-emerald-500" : "bg-gray-300"
+          }`}
+        />
       </div>
 
       <div className="flex-1 min-w-0">

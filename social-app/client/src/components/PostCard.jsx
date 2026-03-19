@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { commentAPI } from "../services/api";
+import { useToast } from "./shared/Toast";
 import ImageViewer from "./ImageViewer";
 import CommentSection from "./CommentSection";
 
@@ -122,10 +123,12 @@ export default function PostCard({
   onCommentClick,
   onShare,
   onBookmark,
+  compact = false,
   isLoading = false,
   error,
 }) {
   const { user } = useAuth();
+  const { showToast } = useToast();
 
   const [localLiked, setLocalLiked] = useState(post?.is_liked || false);
   const [localLikeCount, setLocalLikeCount] = useState(post?.like_count || 0);
@@ -221,6 +224,7 @@ export default function PostCard({
       setLocalLikeCount((c) => c + (nextLiked ? -1 : 1));
       const message = err?.response?.data?.detail || err?.message || "Không thể cập nhật lượt thích.";
       setInternalError(message);
+      showToast("error", "Không thể thích bài viết");
     } finally {
       setLikeBusy(false);
     }
@@ -340,6 +344,11 @@ export default function PostCard({
             <div className="flex items-center gap-1 text-xs text-gray-500">
               <span>{formatRelativeTime(post.created_at)}</span>
               {post.privacy && <span>· {post.privacy}</span>}
+              {post.is_trending && (
+                <span className="ml-1 text-[10px] text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-full">
+                  🔥 Đang hot
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -378,119 +387,123 @@ export default function PostCard({
         </div>
       )}
 
-      {/* Like summary */}
-      {(localLikeCount > 0 || likeSummary) && (
-        <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
-          <div className="flex items-center gap-1">
-            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500 text-white text-[10px]">
-              ❤
-            </span>
-            <span>{likeSummary || `${localLikeCount} lượt thích`}</span>
-          </div>
-          {localCommentCount > 0 && (
+      {!compact && (
+        <>
+          {/* Like summary */}
+          {(localLikeCount > 0 || likeSummary) && (
+            <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+              <div className="flex items-center gap-1">
+                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500 text-white text-[10px]">
+                  ❤
+                </span>
+                <span>{likeSummary || `${localLikeCount} lượt thích`}</span>
+              </div>
+              {localCommentCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleCommentClick}
+                  className="hover:underline"
+                >
+                  {localCommentCount} bình luận
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Divider */}
+          <div className="border-t border-gray-100 my-2" />
+
+          {/* Actions */}
+          <div className="flex items-center justify-between text-sm text-gray-600">
+            <button
+              type="button"
+              onClick={handleLike}
+              disabled={likeBusy}
+              className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg hover:bg-gray-50 active:scale-95 transition ${
+                localLiked ? "text-blue-600 font-semibold" : ""
+              }`}
+            >
+              <span
+                className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${
+                  localLiked ? "bg-blue-50 text-blue-600" : "bg-gray-100 text-gray-600"
+                } ${likeBusy ? "animate-bounce" : ""}`}
+              >
+                ❤
+              </span>
+              <span>Thích</span>
+            </button>
+
             <button
               type="button"
               onClick={handleCommentClick}
-              className="hover:underline"
+              className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg hover:bg-gray-50 active:scale-95 transition ${
+                showComments ? "text-blue-600 font-semibold" : ""
+              }`}
             >
-              {localCommentCount} bình luận
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M7.5 8.25h9m-9 3h5.25M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>Bình luận</span>
             </button>
-          )}
-        </div>
+
+            <button
+              type="button"
+              onClick={handleShare}
+              className="flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg hover:bg-gray-50 active:scale-95 transition"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M7.5 8.25l9-5.25m-9 12l9 5.25m0-17.25v12m0-12L7.5 5.25m9 0L7.5 13.5"
+                />
+              </svg>
+              <span>Chia sẻ</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleBookmark}
+              className={`flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-50 active:scale-95 transition ${
+                localSaved ? "text-yellow-500" : "text-gray-500"
+              }`}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                className="w-5 h-5"
+                fill={localSaved ? "currentColor" : "none"}
+                stroke="currentColor"
+                strokeWidth="1.5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M17.25 3.75H6.75A1.5 1.5 0 005.25 5.25v15l6-3 6 3v-15a1.5 1.5 0 00-1.5-1.5z"
+                />
+              </svg>
+            </button>
+          </div>
+        </>
       )}
-
-      {/* Divider */}
-      <div className="border-t border-gray-100 my-2" />
-
-      {/* Actions */}
-      <div className="flex items-center justify-between text-sm text-gray-600">
-        <button
-          type="button"
-          onClick={handleLike}
-          disabled={likeBusy}
-          className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg hover:bg-gray-50 active:scale-95 transition ${
-            localLiked ? "text-blue-600 font-semibold" : ""
-          }`}
-        >
-          <span
-            className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${
-              localLiked ? "bg-blue-50 text-blue-600" : "bg-gray-100 text-gray-600"
-            } ${likeBusy ? "animate-bounce" : ""}`}
-          >
-            ❤
-          </span>
-          <span>Thích</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={handleCommentClick}
-          className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg hover:bg-gray-50 active:scale-95 transition ${
-            showComments ? "text-blue-600 font-semibold" : ""
-          }`}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M7.5 8.25h9m-9 3h5.25M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <span>Bình luận</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={handleShare}
-          className="flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg hover:bg-gray-50 active:scale-95 transition"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M7.5 8.25l9-5.25m-9 12l9 5.25m0-17.25v12m0-12L7.5 5.25m9 0L7.5 13.5"
-            />
-          </svg>
-          <span>Chia sẻ</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={handleBookmark}
-          className={`flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-50 active:scale-95 transition ${
-            localSaved ? "text-yellow-500" : "text-gray-500"
-          }`}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            className="w-5 h-5"
-            fill={localSaved ? "currentColor" : "none"}
-            stroke="currentColor"
-            strokeWidth="1.5"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M17.25 3.75H6.75A1.5 1.5 0 005.25 5.25v15l6-3 6 3v-15a1.5 1.5 0 00-1.5-1.5z"
-            />
-          </svg>
-        </button>
-      </div>
 
       {(error || internalError) && (
         <p className="mt-2 text-xs text-red-500 bg-red-50 border border-red-100 rounded px-2 py-1.5">
@@ -498,8 +511,7 @@ export default function PostCard({
         </p>
       )}
 
-      {/* Comment Section */}
-      {showComments && (
+      {!compact && showComments && (
         <CommentSection
           comments={transformedComments}
           currentUserId={user?.id}

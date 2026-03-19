@@ -87,6 +87,7 @@ class PostSerializer(serializers.ModelSerializer):
     comment_count = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
     is_saved = serializers.SerializerMethodField()
+    is_trending = serializers.BooleanField(read_only=True, default=False)
 
     class Meta:
         model = Post
@@ -100,6 +101,7 @@ class PostSerializer(serializers.ModelSerializer):
             "comment_count",
             "is_liked",
             "is_saved",
+            "is_trending",
             "created_at",
             "updated_at",
         )

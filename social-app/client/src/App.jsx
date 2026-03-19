@@ -10,6 +10,7 @@ const HomePage = lazy(() => import("./pages/HomePage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const MessagesPage = lazy(() => import("./pages/MessagesPage"));
 const SearchPage = lazy(() => import("./pages/SearchPage"));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 
 // Loading spinner component
 function PageLoader() {
@@ -89,6 +90,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
   );

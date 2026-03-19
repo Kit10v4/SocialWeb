@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Smile, Loader2 } from "lucide-react";
+import { Smile, Loader2, Check, CheckCheck } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
 import { useChat } from "../hooks/useChat";
@@ -17,8 +17,17 @@ export default function ChatBox({ conversation }) {
   const { user } = useAuth();
   const conversationId = conversation?.id;
 
-  const { messages, isConnected, isLoading, error, typingUsers, sendMessage, sendTyping } =
-    useChat(conversationId);
+  const {
+    messages,
+    isConnected,
+    isLoading,
+    error,
+    typingUsers,
+    onlineUsers,
+    sendMessage,
+    sendTyping,
+    markRead,
+  } = useChat(conversationId);
 
   const [input, setInput] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
@@ -37,6 +46,11 @@ export default function ChatBox({ conversation }) {
     setInput("");
     setShowEmoji(false);
   }, [conversationId]);
+
+  useEffect(() => {
+    if (!conversationId) return;
+    markRead();
+  }, [conversationId, markRead]);
 
   const groupedMessages = useMemo(() => {
     const groups = [];
@@ -104,6 +118,9 @@ export default function ChatBox({ conversation }) {
     (p) => String(p.id) !== String(user?.id)
   );
   const title = otherParticipants.map((p) => p.username).join(", ") || "Chat";
+  const isOtherOnline = otherParticipants.some((p) =>
+    onlineUsers?.has?.(String(p.id))
+  );
 
   return (
     <div className="flex flex-col h-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -121,12 +138,20 @@ export default function ChatBox({ conversation }) {
               <span>{title[0]?.toUpperCase()}</span>
             )}
           </div>
-          <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white" />
+          <span
+            className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white ${
+              isOtherOnline ? "bg-emerald-500" : "bg-gray-300"
+            }`}
+          />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-gray-900 truncate">{title}</p>
           <p className="text-[11px] text-gray-400">
-            {isConnected ? "Đang hoạt động" : "Đang kết nối..."}
+            {!isConnected
+              ? "Đang kết nối..."
+              : isOtherOnline
+                ? "Đang hoạt động"
+                : "Offline"}
           </p>
         </div>
       </div>
@@ -242,16 +267,28 @@ function MessageGroup({ group }) {
         </div>
       )}
       <div className={`max-w-[70%] flex flex-col ${isMine ? "items-end" : "items-start"}`}>
-        {group.messages.map((msg) => (
-          <div key={msg.id} className="mb-0.5">
+        {group.messages.map((msg) => {
+          const showRead = isMine && msg.is_read;
+          return (
+            <div key={msg.id} className="mb-0.5">
             <div className={`inline-block px-3 py-1.5 rounded-2xl text-sm ${bubbleColor}`}>
               {msg.content}
             </div>
-            <div className={`text-[10px] mt-0.5 ${timeColor}`}>
-              {formatTimeShort(msg.created_at)}
+            <div className={`flex items-center gap-1 text-[10px] mt-0.5 ${timeColor}`}>
+              <span>{formatTimeShort(msg.created_at)}</span>
+              {isMine && (
+                <span className="inline-flex items-center">
+                  {showRead ? (
+                    <CheckCheck className="w-3 h-3" />
+                  ) : (
+                    <Check className="w-3 h-3" />
+                  )}
+                </span>
+              )}
             </div>
           </div>
-        ))}
+        );
+        })}
       </div>
     </div>
   );

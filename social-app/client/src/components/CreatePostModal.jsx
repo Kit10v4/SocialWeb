@@ -97,12 +97,12 @@ export default function CreatePostModal({
 
   return (
     <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm sm:p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget && !isSubmitting) onClose?.();
       }}
     >
-      <div className="w-full max-w-xl rounded-2xl bg-white shadow-xl p-4 sm:p-6">
+      <div className="w-full h-full sm:h-auto sm:max-w-xl sm:max-h-[90vh] rounded-none sm:rounded-2xl bg-white shadow-xl p-4 sm:p-6 overflow-y-auto">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-semibold">Tạo bài viết</h2>
           <button

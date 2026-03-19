@@ -25,6 +25,7 @@ import EditProfileModal from "../components/profile/EditProfileModal";
 import FriendCard from "../components/profile/FriendCard";
 import PostCard, { PostCardSkeleton } from "../components/PostCard";
 import ImageViewer from "../components/ImageViewer";
+import BottomNav from "../components/shared/BottomNav";
 
 // ── Tab constants ──────────────────────────────────────────────────────────
 const TABS = { POSTS: "posts", PHOTOS: "photos", FRIENDS: "friends" };
@@ -297,7 +298,7 @@ export default function ProfilePage() {
 
   // ── Render ─────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 pb-16 md:pb-0">
       {/* ── Profile card ──────────────────────────────────────────────── */}
       <div className="bg-white shadow-sm">
         <div className="max-w-4xl mx-auto">
@@ -532,6 +533,8 @@ export default function ProfilePage() {
           onClose={() => setToast(null)}
         />
       )}
+
+      <BottomNav />
     </div>
   );
 }

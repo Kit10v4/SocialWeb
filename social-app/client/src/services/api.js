@@ -113,6 +113,7 @@ export const friendsAPI = {
 // ── Posts API helpers ─────────────────────────────────────────────────
 export const postAPI = {
   list: (params) => api.get("/posts/", { params }),
+  search: (q, params) => api.get("/posts/search/", { params: { q, ...params } }),
   create: (data) =>
     api.post("/posts/", data, {
       headers: { "Content-Type": "multipart/form-data" },

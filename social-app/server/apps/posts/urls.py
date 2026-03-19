@@ -5,6 +5,7 @@ from . import views
 urlpatterns = [
     # --- Posts CRUD ---------------------------------------------------------
     path("posts/", views.PostListCreateView.as_view(), name="post-list-create"),
+    path("posts/search/", views.PostSearchView.as_view(), name="post-search"),
     path("posts/saved/", views.SavedPostListView.as_view(), name="post-saved-list"),
     path("posts/<uuid:pk>/", views.PostDetailView.as_view(), name="post-detail"),
 

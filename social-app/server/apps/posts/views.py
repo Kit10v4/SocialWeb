@@ -97,6 +97,51 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 # ===========================================================================
+# Search posts
+# ===========================================================================
+
+class PostSearchView(generics.ListAPIView):
+    """
+    GET /api/posts/search/?q=keyword — search posts by content
+    """
+
+    permission_classes = (IsAuthenticated,)
+    serializer_class = PostSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        q = (self.request.query_params.get("q") or "").strip()
+        if not q:
+            return Post.objects.none()
+
+        from apps.users.models import Friendship
+
+        friend_ids = list(
+            Friendship.objects.filter(
+                Q(from_user=user, status="accepted") | Q(to_user=user, status="accepted")
+            ).values_list("from_user_id", "to_user_id")
+        )
+        friends = set()
+        for pair in friend_ids:
+            friends.update(pair)
+        friends.discard(user.pk)
+
+        return (
+            Post.objects.filter(
+                Q(content__icontains=q)
+                & (
+                    Q(privacy="public")
+                    | Q(author=user)
+                    | Q(author_id__in=friends, privacy__in=["public", "friends"])
+                )
+            )
+            .select_related("author")
+            .prefetch_related("images", "likes", "comments")
+            .order_by("-created_at")
+        )
+
+
+# ===========================================================================
 # Like toggle
 # ===========================================================================
 

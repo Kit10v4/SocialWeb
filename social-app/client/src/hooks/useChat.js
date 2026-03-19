@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { chatAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
@@ -15,8 +15,10 @@ import { useAuth } from "../context/AuthContext";
  *  isLoading,
  *  error,
  *  typingUsers, // array of { id, username }
+ *  onlineUsers, // Set of userIds
  *  sendMessage(content: string),
  *  sendTyping(isTyping: boolean),
+ *  markRead(): Promise<void>,
  * }
  */
 export function useChat(conversationId) {
@@ -27,6 +29,7 @@ export function useChat(conversationId) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [typingUsers, setTypingUsers] = useState([]);
+  const [onlineUsers, setOnlineUsers] = useState(() => new Set());
 
   const socketRef = useRef(null);
   const reconnectAttemptsRef = useRef(0);
@@ -56,6 +59,7 @@ export function useChat(conversationId) {
 
   // Fetch initial history when conversation changes
   useEffect(() => {
+    setOnlineUsers(new Set());
     if (!conversationId) {
       setMessages([]);
       return;
@@ -125,6 +129,14 @@ export function useChat(conversationId) {
       ws.onopen = () => {
         setIsConnected(true);
         reconnectAttemptsRef.current = 0;
+        sendSocketEvent(ws, {
+          type: "user_online",
+          user: {
+            id: user?.id,
+            username: user?.username,
+            avatar: user?.avatar,
+          },
+        });
       };
 
       ws.onclose = () => {
@@ -188,10 +200,25 @@ export function useChat(conversationId) {
         setTypingUsers(
           Array.from(map.values()).map((item) => ({ id: item.id, username: item.username }))
         );
+      } else if (type === "user_online" || type === "user_offline") {
+        const u = data.user || {};
+        const userId = data.user_id ?? u.id;
+        if (!userId || String(userId) === String(user?.id)) return;
+        updateOnlineUsers(String(userId), type === "user_online");
       } else if (type === "mark_read") {
-        const readerId = data.user_id;
-        if (!readerId || String(readerId) !== String(user?.id)) return;
-        setMessages((prev) => prev.map((m) => ({ ...m, is_read: true })));
+        const readerId = data.user_id ?? data.user?.id;
+        if (!readerId) return;
+        setMessages((prev) =>
+          prev.map((m) => {
+            const senderId = m.sender?.id;
+            if (!senderId) return m;
+            const isMine = String(senderId) === String(user?.id);
+            if (String(readerId) === String(user?.id)) {
+              return isMine ? m : { ...m, is_read: true };
+            }
+            return isMine ? { ...m, is_read: true } : m;
+          })
+        );
       }
     };
 
@@ -203,10 +230,25 @@ export function useChat(conversationId) {
     };
   }, [conversationId, user?.id]);
 
+  const sendSocketEvent = useCallback((ws, payload) => {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    ws.send(JSON.stringify(payload));
+  }, []);
+
   const cleanupSocket = () => {
     clearTimeout(reconnectTimeoutRef.current);
     if (socketRef.current) {
       try {
+        if (socketRef.current.readyState === WebSocket.OPEN) {
+          sendSocketEvent(socketRef.current, {
+            type: "user_offline",
+            user: {
+              id: user?.id,
+              username: user?.username,
+              avatar: user?.avatar,
+            },
+          });
+        }
         socketRef.current.close();
       } catch {
         // ignore
@@ -215,6 +257,22 @@ export function useChat(conversationId) {
     }
     setIsConnected(false);
   };
+
+  const updateOnlineUsers = useCallback((userId, isOnline) => {
+    setOnlineUsers((prev) => {
+      const next = new Set(prev);
+      if (isOnline) next.add(userId);
+      else next.delete(userId);
+      return next;
+    });
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("chat:online-status", {
+          detail: { userId, online: isOnline },
+        })
+      );
+    }
+  }, []);
 
   const sendMessage = (content, messageType = "text") => {
     const ws = socketRef.current;
@@ -238,13 +296,36 @@ export function useChat(conversationId) {
     );
   };
 
+  const markRead = useCallback(async () => {
+    if (!conversationId) return;
+    try {
+      await chatAPI.markRead(conversationId);
+      setMessages((prev) =>
+        prev.map((m) => {
+          const senderId = m.sender?.id;
+          if (!senderId) return m;
+          const isMine = String(senderId) === String(user?.id);
+          return isMine ? m : { ...m, is_read: true };
+        })
+      );
+      sendSocketEvent(socketRef.current, {
+        type: "mark_read",
+        user_id: user?.id,
+      });
+    } catch (err) {
+      setError(err?.response?.data?.detail || "Không thể đánh dấu đã đọc.");
+    }
+  }, [conversationId, sendSocketEvent, user?.id]);
+
   return {
     messages,
     isConnected,
     isLoading,
     error,
     typingUsers,
+    onlineUsers,
     sendMessage,
     sendTyping,
+    markRead,
   };
 }

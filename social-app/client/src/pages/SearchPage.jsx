@@ -1,17 +1,51 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Search, UserPlus, Clock, UserCheck, Loader2, X } from "lucide-react";
-import { profileAPI, friendsAPI } from "../services/api";
+import { profileAPI, friendsAPI, postAPI } from "../services/api";
+import PostCard from "../components/PostCard";
+import BottomNav from "../components/shared/BottomNav";
+import { useToast } from "../components/shared/Toast";
+
+const TABS = {
+  USERS: "users",
+  POSTS: "posts",
+};
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function highlightText(text, query) {
+  if (!text || !query?.trim()) return text;
+  const escaped = escapeRegExp(query.trim());
+  const regex = new RegExp(`(${escaped})`, "ig");
+  const parts = String(text).split(regex);
+  const needle = query.trim().toLowerCase();
+  return parts.map((part, idx) =>
+    part.toLowerCase() === needle ? (
+      <mark key={idx} className="bg-yellow-200/70 px-0.5 rounded">
+        {part}
+      </mark>
+    ) : (
+      part
+    )
+  );
+}
 
 // ── SearchPage ─────────────────────────────────────────────────────────────
 export default function SearchPage() {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [searched, setSearched] = useState(false); // has the user searched at all?
+  const [activeTab, setActiveTab] = useState(TABS.USERS);
+  const [userResults, setUserResults] = useState([]);
+  const [postResults, setPostResults] = useState([]);
+  const [isSearchingUsers, setIsSearchingUsers] = useState(false);
+  const [isSearchingPosts, setIsSearchingPosts] = useState(false);
+  const [searchedUsers, setSearchedUsers] = useState(false);
+  const [searchedPosts, setSearchedPosts] = useState(false);
   // Map of userId → friendship action state: "none" | "sending" | "sent"
   const [requestStates, setRequestStates] = useState({});
   const inputRef = useRef(null);
+  const { showToast } = useToast();
 
   // Focus input on mount
   useEffect(() => {
@@ -20,28 +54,55 @@ export default function SearchPage() {
 
   // Debounced search — fires 300 ms after the user stops typing
   useEffect(() => {
+    if (activeTab !== TABS.USERS) return;
     const trimmed = query.trim();
     if (trimmed.length < 2) {
-      setResults([]);
-      setSearched(false);
+      setUserResults([]);
+      setSearchedUsers(false);
       return;
     }
 
     const timer = setTimeout(async () => {
-      setIsSearching(true);
-      setSearched(true);
+      setIsSearchingUsers(true);
+      setSearchedUsers(true);
       try {
         const { data } = await profileAPI.search(trimmed);
-        setResults(Array.isArray(data) ? data : data.results ?? []);
+        setUserResults(Array.isArray(data) ? data : data.results ?? []);
       } catch {
-        setResults([]);
+        setUserResults([]);
       } finally {
-        setIsSearching(false);
+        setIsSearchingUsers(false);
       }
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [query]);
+  }, [query, activeTab]);
+
+  useEffect(() => {
+    if (activeTab !== TABS.POSTS) return;
+    const trimmed = query.trim();
+    if (trimmed.length < 2) {
+      setPostResults([]);
+      setSearchedPosts(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearchingPosts(true);
+      setSearchedPosts(true);
+      try {
+        const { data } = await postAPI.search(trimmed);
+        const list = Array.isArray(data) ? data : data.results ?? [];
+        setPostResults(list);
+      } catch {
+        setPostResults([]);
+      } finally {
+        setIsSearchingPosts(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [query, activeTab]);
 
   // ── Friend request from search result ──────────────────────────────────
   const handleAddFriend = async (userId) => {
@@ -49,16 +110,25 @@ export default function SearchPage() {
     try {
       await friendsAPI.sendRequest(userId);
       setRequestStates((s) => ({ ...s, [userId]: "sent" }));
+      showToast("success", "Đã gửi lời mời kết bạn");
     } catch {
       setRequestStates((s) => ({ ...s, [userId]: "none" }));
     }
   };
 
   // ── Render ─────────────────────────────────────────────────────────────
-  return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="max-w-2xl mx-auto px-4 py-8 sm:py-10">
+  const highlightedPosts = useMemo(
+    () =>
+      postResults.map((post) => ({
+        ...post,
+        content: highlightText(post.content, query),
+      })),
+    [postResults, query]
+  );
 
+  return (
+    <div className="min-h-screen bg-gray-100 pb-16 md:pb-0">
+      <div className="max-w-2xl mx-auto px-4 py-8 sm:py-10">
         {/* Search bar */}
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
@@ -67,7 +137,7 @@ export default function SearchPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             type="text"
-            placeholder="Tìm kiếm theo tên hoặc email..."
+            placeholder="Tìm kiếm theo tên hoặc nội dung bài viết..."
             className="w-full pl-12 pr-10 py-3.5 bg-white border border-gray-200 rounded-2xl text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
           />
           {query && (
@@ -80,49 +150,108 @@ export default function SearchPage() {
           )}
         </div>
 
+        {/* Tabs */}
+        <div className="mt-4 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab(TABS.USERS)}
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
+              activeTab === TABS.USERS
+                ? "bg-blue-600 text-white"
+                : "bg-white text-gray-600 border border-gray-200"
+            }`}
+          >
+            Mọi người
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab(TABS.POSTS)}
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
+              activeTab === TABS.POSTS
+                ? "bg-blue-600 text-white"
+                : "bg-white text-gray-600 border border-gray-200"
+            }`}
+          >
+            Bài viết
+          </button>
+        </div>
+
         {/* Results area */}
         <div className="mt-4">
-          {/* Loading spinner */}
-          {isSearching && (
-            <div className="flex justify-center py-10">
-              <Loader2 className="h-7 w-7 animate-spin text-blue-600" />
-            </div>
+          {activeTab === TABS.USERS && (
+            <>
+              {isSearchingUsers && (
+                <div className="flex justify-center py-10">
+                  <Loader2 className="h-7 w-7 animate-spin text-blue-600" />
+                </div>
+              )}
+
+              {!isSearchingUsers && !searchedUsers && (
+                <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                  <Search className="h-12 w-12 mb-3 opacity-30" />
+                  <p className="font-medium">Nhập ít nhất 2 ký tự để tìm kiếm</p>
+                </div>
+              )}
+
+              {!isSearchingUsers && searchedUsers && userResults.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                  <Search className="h-12 w-12 mb-3 opacity-30" />
+                  <p className="font-medium">Không tìm thấy kết quả cho "{query}"</p>
+                </div>
+              )}
+
+              {!isSearchingUsers && userResults.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  <p className="text-xs text-gray-400 font-medium mb-1 px-1">
+                    {userResults.length} kết quả
+                  </p>
+                  {userResults.map((user) => (
+                    <UserResultCard
+                      key={user.id}
+                      user={user}
+                      requestState={requestStates[user.id] ?? "none"}
+                      onAddFriend={() => handleAddFriend(user.id)}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
           )}
 
-          {/* Prompt when query too short */}
-          {!isSearching && !searched && (
-            <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-              <Search className="h-12 w-12 mb-3 opacity-30" />
-              <p className="font-medium">Nhập ít nhất 2 ký tự để tìm kiếm</p>
-            </div>
-          )}
+          {activeTab === TABS.POSTS && (
+            <>
+              {isSearchingPosts && (
+                <div className="flex justify-center py-10">
+                  <Loader2 className="h-7 w-7 animate-spin text-blue-600" />
+                </div>
+              )}
 
-          {/* No results */}
-          {!isSearching && searched && results.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-              <Search className="h-12 w-12 mb-3 opacity-30" />
-              <p className="font-medium">Không tìm thấy kết quả cho "{query}"</p>
-            </div>
-          )}
+              {!isSearchingPosts && !searchedPosts && (
+                <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                  <Search className="h-12 w-12 mb-3 opacity-30" />
+                  <p className="font-medium">Nhập ít nhất 2 ký tự để tìm bài viết</p>
+                </div>
+              )}
 
-          {/* Result list */}
-          {!isSearching && results.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <p className="text-xs text-gray-400 font-medium mb-1 px-1">
-                {results.length} kết quả
-              </p>
-              {results.map((user) => (
-                <UserResultCard
-                  key={user.id}
-                  user={user}
-                  requestState={requestStates[user.id] ?? "none"}
-                  onAddFriend={() => handleAddFriend(user.id)}
-                />
-              ))}
-            </div>
+              {!isSearchingPosts && searchedPosts && postResults.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                  <Search className="h-12 w-12 mb-3 opacity-30" />
+                  <p className="font-medium">Không tìm thấy kết quả cho "{query}"</p>
+                </div>
+              )}
+
+              {!isSearchingPosts && postResults.length > 0 && (
+                <div className="space-y-4">
+                  {highlightedPosts.map((post) => (
+                    <PostCard key={post.id} post={post} compact />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
+      <BottomNav />
     </div>
   );
 }

@@ -1,6 +1,8 @@
 from datetime import timedelta
 
 from django.db.models import Count, Exists, OuterRef, Q
+from django.db.models import ExpressionWrapper, F, FloatField, IntegerField, Value
+from django.db.models.functions import Now
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from rest_framework.permissions import IsAuthenticated
@@ -66,7 +68,34 @@ class FeedView(APIView):
             if dt is not None:
                 qs = qs.filter(created_at__lt=dt)
 
+        def recency_bonus(created_at):
+            if not created_at:
+                return 0
+            now = timezone.now()
+            delta = now - created_at
+            if delta <= timedelta(hours=1):
+                return 50
+            if delta <= timedelta(hours=6):
+                return 30
+            if delta <= timedelta(hours=24):
+                return 10
+            if delta <= timedelta(days=3):
+                return 5
+            return 0
+
+        def compute_score(post):
+            return (
+                (post.like_count or 0) * 2
+                + (post.comment_count or 0) * 3
+                + recency_bonus(post.created_at)
+            )
+
         items = list(qs[: self.page_size + 1])
+        for post in items:
+            post.score = compute_score(post)
+            post.is_trending = post.score > 20
+
+        items.sort(key=lambda p: p.score, reverse=True)
         has_next = len(items) > self.page_size
         items = items[: self.page_size]
 
