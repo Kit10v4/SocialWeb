@@ -1,5 +1,16 @@
 import { useEffect, useState } from "react";
 
+const DEFAULT_AVATAR = "https://ui-avatars.com/api/?background=random&name=U";
+
+/**
+ * Get avatar URL with fallback
+ */
+function getAvatarUrl(avatarUrl, name) {
+  if (avatarUrl) return avatarUrl;
+  const initial = name?.[0]?.toUpperCase() || "U";
+  return `https://ui-avatars.com/api/?background=random&name=${initial}`;
+}
+
 /**
  * CommentSection
  *
@@ -14,6 +25,7 @@ import { useEffect, useState } from "react";
  *      }
  *    ]
  *  - currentUserId: string | number
+ *  - currentUserAvatar?: string (optional avatar of current user for input)
  *  - onSubmitComment?: (text, parentId: string | number | null) => Promise<void> | void
  *  - onDeleteComment?: (commentId) => Promise<void> | void
  *  - isLoading?: boolean
@@ -22,6 +34,7 @@ import { useEffect, useState } from "react";
 export default function CommentSection({
   comments = [],
   currentUserId,
+  currentUserAvatar,
   onSubmitComment,
   onDeleteComment,
   isLoading = false,
@@ -101,7 +114,7 @@ export default function CommentSection({
             {toShow.map((comment) => (
               <div key={comment.id} className="flex items-start gap-2">
                 <img
-                  src={comment.author?.avatarUrl}
+                  src={getAvatarUrl(comment.author?.avatarUrl, comment.author?.name)}
                   alt={comment.author?.name}
                   className="w-8 h-8 rounded-full object-cover bg-gray-200 mt-0.5"
                 />
@@ -139,7 +152,7 @@ export default function CommentSection({
                       {comment.replies.map((reply) => (
                         <div key={reply.id} className="flex items-start gap-2">
                           <img
-                            src={reply.author?.avatarUrl}
+                            src={getAvatarUrl(reply.author?.avatarUrl, reply.author?.name)}
                             alt={reply.author?.name}
                             className="w-7 h-7 rounded-full object-cover bg-gray-200 mt-0.5"
                           />
@@ -201,7 +214,11 @@ export default function CommentSection({
 
       {/* Main input */}
       <div className="mt-3 flex items-start gap-2">
-        <div className="w-8 h-8 rounded-full bg-gray-200" />
+        <img
+          src={currentUserAvatar || DEFAULT_AVATAR}
+          alt="You"
+          className="w-8 h-8 rounded-full object-cover bg-gray-200"
+        />
         <div className="flex-1">
           <textarea
             value={input}

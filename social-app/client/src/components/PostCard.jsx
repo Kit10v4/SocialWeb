@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { commentAPI } from "../services/api";
 import ImageViewer from "./ImageViewer";
+import CommentSection from "./CommentSection";
 
 function formatRelativeTime(dateInput) {
   const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
@@ -54,21 +57,57 @@ function buildLikeText({ likedFriends = [], othersCount = 0 }) {
 }
 
 /**
+ * Normalize images from API format to URL strings
+ * API format: [{ id, image, order }]
+ * Output: string[]
+ */
+function normalizeImages(images) {
+  if (!Array.isArray(images)) return [];
+  return images.map((img) => {
+    if (typeof img === "string") return img;
+    return img.image || img.url || "";
+  }).filter(Boolean);
+}
+
+/**
+ * Transform API comment to CommentSection format
+ * API: { author: { avatar, username }, created_at, replies: [...] }
+ * UI:  { author: { avatarUrl, name, id }, createdAt, replies: [...] }
+ */
+function transformComment(comment) {
+  if (!comment) return null;
+  return {
+    id: comment.id,
+    content: comment.content,
+    createdAt: comment.created_at,
+    author: {
+      id: comment.author?.id,
+      name: comment.author?.username,
+      avatarUrl: comment.author?.avatar,
+    },
+    replies: Array.isArray(comment.replies)
+      ? comment.replies.map(transformComment).filter(Boolean)
+      : [],
+  };
+}
+
+/**
  * PostCard
  *
- * Props:
+ * Props (API format from Django):
  *  - post: {
- *      id,
- *      author: { name, avatarUrl },
- *      createdAt,
- *      content,
- *      images: string[],
- *      liked?: boolean,
- *      likeCount?: number,
+ *      id: string,
+ *      author: { id: string, username: string, avatar: string },
+ *      content: string,
+ *      images: [{ id: string, image: string, order: number }],
+ *      privacy: string,
+ *      like_count: number,
+ *      comment_count: number,
+ *      is_liked: boolean,
+ *      is_saved: boolean,
+ *      created_at: string (ISO),
  *      likedFriends?: { id: string | number; name: string; isYou?: boolean }[],
  *      otherLikesCount?: number,
- *      commentCount?: number,
- *      bookmarked?: boolean,
  *    }
  *  - onLike?: (postId) => Promise<void> | void
  *  - onCommentClick?: (postId) => void
@@ -86,14 +125,25 @@ export default function PostCard({
   isLoading = false,
   error,
 }) {
-  const [localLiked, setLocalLiked] = useState(post?.liked || false);
-  const [localLikeCount, setLocalLikeCount] = useState(post?.likeCount || 0);
+  const { user } = useAuth();
+
+  const [localLiked, setLocalLiked] = useState(post?.is_liked || false);
+  const [localLikeCount, setLocalLikeCount] = useState(post?.like_count || 0);
+  const [localCommentCount, setLocalCommentCount] = useState(post?.comment_count || 0);
+  const [localSaved, setLocalSaved] = useState(post?.is_saved || false);
   const [likeBusy, setLikeBusy] = useState(false);
   const [showContentFull, setShowContentFull] = useState(false);
   const [isTruncated, setIsTruncated] = useState(false);
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [internalError, setInternalError] = useState("");
+
+  // Comment section states
+  const [showComments, setShowComments] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentsError, setCommentsError] = useState("");
+  const [commentsFetched, setCommentsFetched] = useState(false);
 
   const contentRef = (node) => {
     if (!node) return;
@@ -106,9 +156,17 @@ export default function PostCard({
   };
 
   useEffect(() => {
-    setLocalLiked(post?.liked || false);
-    setLocalLikeCount(post?.likeCount || 0);
-  }, [post?.liked, post?.likeCount]);
+    setLocalLiked(post?.is_liked || false);
+    setLocalLikeCount(post?.like_count || 0);
+  }, [post?.is_liked, post?.like_count]);
+
+  useEffect(() => {
+    setLocalCommentCount(post?.comment_count || 0);
+  }, [post?.comment_count]);
+
+  useEffect(() => {
+    setLocalSaved(post?.is_saved || false);
+  }, [post?.is_saved]);
 
   const likeSummary = useMemo(
     () =>
@@ -118,6 +176,33 @@ export default function PostCard({
       }),
     [post?.likedFriends, post?.otherLikesCount]
   );
+
+  // Normalize images from API format to URL strings
+  const imageUrls = useMemo(() => normalizeImages(post?.images), [post?.images]);
+
+  // Transform comments for CommentSection
+  const transformedComments = useMemo(
+    () => comments.map(transformComment).filter(Boolean),
+    [comments]
+  );
+
+  // Fetch comments when section is opened (lazy load)
+  const fetchComments = async () => {
+    if (!post?.id) return;
+    setCommentsLoading(true);
+    setCommentsError("");
+    try {
+      const res = await commentAPI.list(post.id);
+      const data = Array.isArray(res.data) ? res.data : res.data.results ?? [];
+      setComments(data);
+      setCommentsFetched(true);
+    } catch (err) {
+      const message = err?.response?.data?.detail || err?.message || "Không thể tải bình luận.";
+      setCommentsError(message);
+    } finally {
+      setCommentsLoading(false);
+    }
+  };
 
   const handleLike = async () => {
     if (!post || likeBusy) return;
@@ -143,6 +228,17 @@ export default function PostCard({
 
   const handleCommentClick = () => {
     if (!post) return;
+
+    // Toggle comment section
+    const willShow = !showComments;
+    setShowComments(willShow);
+
+    // Fetch comments if opening and not yet fetched
+    if (willShow && !commentsFetched) {
+      fetchComments();
+    }
+
+    // Also call external handler if provided
     onCommentClick?.(post.id);
   };
 
@@ -151,9 +247,76 @@ export default function PostCard({
     onShare?.(post.id);
   };
 
-  const handleBookmark = () => {
+  const handleBookmark = async () => {
     if (!post) return;
-    onBookmark?.(post.id);
+    setLocalSaved((prev) => !prev);
+    try {
+      await onBookmark?.(post.id);
+    } catch {
+      setLocalSaved((prev) => !prev);
+    }
+  };
+
+  // Submit comment handler
+  const handleSubmitComment = async (text, parentId = null) => {
+    if (!post?.id) return;
+
+    const res = await commentAPI.create(post.id, {
+      content: text,
+      parent: parentId,
+    });
+
+    const newComment = res.data;
+
+    if (parentId) {
+      // Add reply to existing comment
+      setComments((prev) =>
+        prev.map((c) => {
+          if (c.id === parentId) {
+            return {
+              ...c,
+              replies: [...(c.replies || []), newComment],
+            };
+          }
+          return c;
+        })
+      );
+    } else {
+      // Add new top-level comment
+      setComments((prev) => [newComment, ...prev]);
+      setLocalCommentCount((c) => c + 1);
+    }
+  };
+
+  // Delete comment handler
+  const handleDeleteComment = async (commentId) => {
+    await commentAPI.delete(commentId);
+
+    // Remove from state (check both top-level and replies)
+    let wasTopLevel = false;
+    setComments((prev) => {
+      const filtered = prev.filter((c) => {
+        if (c.id === commentId) {
+          wasTopLevel = true;
+          return false;
+        }
+        return true;
+      });
+
+      // If not found at top level, remove from replies
+      if (!wasTopLevel) {
+        return filtered.map((c) => ({
+          ...c,
+          replies: (c.replies || []).filter((r) => r.id !== commentId),
+        }));
+      }
+
+      return filtered;
+    });
+
+    if (wasTopLevel) {
+      setLocalCommentCount((c) => Math.max(0, c - 1));
+    }
   };
 
   if (isLoading) return <PostCardSkeleton />;
@@ -166,16 +329,16 @@ export default function PostCard({
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
           <img
-            src={post.author?.avatarUrl}
-            alt={post.author?.name}
+            src={post.author?.avatar}
+            alt={post.author?.username}
             className="w-10 h-10 rounded-full object-cover bg-gray-200"
           />
           <div>
             <div className="flex items-center gap-1">
-              <p className="font-semibold text-sm sm:text-base">{post.author?.name}</p>
+              <p className="font-semibold text-sm sm:text-base">{post.author?.username}</p>
             </div>
             <div className="flex items-center gap-1 text-xs text-gray-500">
-              <span>{formatRelativeTime(post.createdAt)}</span>
+              <span>{formatRelativeTime(post.created_at)}</span>
               {post.privacy && <span>· {post.privacy}</span>}
             </div>
           </div>
@@ -206,9 +369,9 @@ export default function PostCard({
       )}
 
       {/* Images */}
-      {Array.isArray(post.images) && post.images.length > 0 && (
+      {imageUrls.length > 0 && (
         <div className="mb-3">
-          <ImageGrid images={post.images} onOpen={(index) => {
+          <ImageGrid images={imageUrls} onOpen={(index) => {
             setActiveImageIndex(index);
             setImageViewerOpen(true);
           }} />
@@ -224,15 +387,15 @@ export default function PostCard({
             </span>
             <span>{likeSummary || `${localLikeCount} lượt thích`}</span>
           </div>
-          {post.commentCount ? (
+          {localCommentCount > 0 && (
             <button
               type="button"
               onClick={handleCommentClick}
               className="hover:underline"
             >
-              {post.commentCount} bình luận
+              {localCommentCount} bình luận
             </button>
-          ) : null}
+          )}
         </div>
       )}
 
@@ -262,7 +425,9 @@ export default function PostCard({
         <button
           type="button"
           onClick={handleCommentClick}
-          className="flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg hover:bg-gray-50 active:scale-95 transition"
+          className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg hover:bg-gray-50 active:scale-95 transition ${
+            showComments ? "text-blue-600 font-semibold" : ""
+          }`}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -307,14 +472,14 @@ export default function PostCard({
           type="button"
           onClick={handleBookmark}
           className={`flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-50 active:scale-95 transition ${
-            post.bookmarked ? "text-yellow-500" : "text-gray-500"
+            localSaved ? "text-yellow-500" : "text-gray-500"
           }`}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
             className="w-5 h-5"
-            fill={post.bookmarked ? "currentColor" : "none"}
+            fill={localSaved ? "currentColor" : "none"}
             stroke="currentColor"
             strokeWidth="1.5"
           >
@@ -333,9 +498,22 @@ export default function PostCard({
         </p>
       )}
 
+      {/* Comment Section */}
+      {showComments && (
+        <CommentSection
+          comments={transformedComments}
+          currentUserId={user?.id}
+          currentUserAvatar={user?.avatar}
+          onSubmitComment={handleSubmitComment}
+          onDeleteComment={handleDeleteComment}
+          isLoading={commentsLoading}
+          error={commentsError}
+        />
+      )}
+
       {imageViewerOpen && (
         <ImageViewer
-          images={post.images}
+          images={imageUrls}
           initialIndex={activeImageIndex}
           isOpen={imageViewerOpen}
           onClose={() => setImageViewerOpen(false)}

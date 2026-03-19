@@ -97,6 +97,7 @@ export const profileAPI = {
     }),
   search: (q) => api.get(`/users/search/?q=${encodeURIComponent(q)}`),
   getSuggestions: () => api.get("/users/suggestions/"),
+  getUserPosts: (username) => api.get(`/users/${username}/posts/`),
 };
 
 // ── Friends API helpers ───────────────────────────────────────────────

@@ -1,4 +1,4 @@
-from django.db.models import Q
+from django.db.models import Count, Exists, OuterRef, Q
 from django.utils.decorators import method_decorator
 from rest_framework import generics, status
 
@@ -16,6 +16,9 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
+
+from apps.posts.models import Like, Post
+from apps.posts.serializers import PostSerializer
 
 from .models import Friendship, User
 from .serializers import (
@@ -286,3 +289,68 @@ class FriendRequestListView(generics.ListAPIView):
         return Friendship.objects.filter(
             to_user=self.request.user, status="pending"
         ).select_related("from_user", "to_user")
+
+
+# ===========================================================================
+# User Posts view
+# ===========================================================================
+
+class UserPostsView(generics.ListAPIView):
+    """
+    GET /api/users/<username>/posts/ — list posts of a specific user.
+
+    Privacy rules:
+    - Public posts: visible to everyone
+    - Friends posts: visible only if viewer is friends with author
+    - Private posts: visible only to author themselves
+    """
+    serializer_class = PostSerializer
+
+    def get_queryset(self):
+        username = self.kwargs.get("username")
+        target_user = User.objects.filter(username=username, is_active=True).first()
+
+        if not target_user:
+            return Post.objects.none()
+
+        viewer = self.request.user if self.request.user.is_authenticated else None
+        is_own_profile = viewer and viewer.pk == target_user.pk
+
+        # Base queryset for target user's posts
+        qs = Post.objects.filter(author=target_user)
+
+        if is_own_profile:
+            # Owner can see all their posts
+            pass
+        elif viewer:
+            # Check if viewer is friends with target user
+            is_friend = Friendship.objects.filter(
+                Q(from_user=viewer, to_user=target_user, status="accepted") |
+                Q(from_user=target_user, to_user=viewer, status="accepted")
+            ).exists()
+
+            if is_friend:
+                # Friends can see public + friends posts
+                qs = qs.filter(privacy__in=["public", "friends"])
+            else:
+                # Non-friends can only see public posts
+                qs = qs.filter(privacy="public")
+        else:
+            # Anonymous users can only see public posts
+            qs = qs.filter(privacy="public")
+
+        # Annotate with counts and is_liked for performance
+        qs = qs.select_related("author").prefetch_related("images")
+        qs = qs.annotate(
+            like_count=Count("likes", distinct=True),
+            comment_count=Count("comments", distinct=True),
+        )
+
+        if viewer:
+            qs = qs.annotate(
+                is_liked=Exists(
+                    Like.objects.filter(post=OuterRef("pk"), user=viewer)
+                )
+            )
+
+        return qs.order_by("-created_at")

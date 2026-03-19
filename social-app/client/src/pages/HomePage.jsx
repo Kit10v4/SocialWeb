@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Home, MessageCircle, Users, LogOut, Bell } from "lucide-react";
+import { Home, MessageCircle, Users, LogOut, Bell, CheckCircle, XCircle } from "lucide-react";
 import NotificationBell from "../components/shared/NotificationBell";
 
 import { useAuth } from "../context/AuthContext";
@@ -18,9 +18,22 @@ export default function HomePage() {
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [toast, setToast] = useState(null); // { type: 'success' | 'error', message: string }
   const loadMoreRef = useRef(null);
 
+  // ── Toast auto-dismiss ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 3000);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
   // ── Infinite feed query ───────────────────────────────────────────────
+  // API returns posts with structure:
+  // {
+  //   id, author: { id, username, avatar }, content, images: [{ id, image, order }],
+  //   privacy, like_count, comment_count, is_liked, is_saved, created_at
+  // }
   const {
     data,
     isLoading,
@@ -101,8 +114,44 @@ export default function HomePage() {
   });
 
   const handleLike = async (postId) => {
-    // Let PostCard handle its own local optimistic UI; we keep cache in sync.
     return likeMutation.mutateAsync(postId);
+  };
+
+  // ── Bookmark mutation ───────────────────────────────────────────────
+  const bookmarkMutation = useMutation({
+    mutationFn: (postId) => postAPI.toggleSave(postId),
+    onMutate: async (postId) => {
+      await queryClient.cancelQueries({ queryKey: ["feed"] });
+      const previous = queryClient.getQueryData(["feed"]);
+
+      queryClient.setQueryData(["feed"], (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            results: page.results?.map((post) => {
+              if (post.id !== postId) return post;
+              return { ...post, is_saved: !post.is_saved };
+            }),
+          })),
+        };
+      });
+
+      return { previous };
+    },
+    onError: (_err, _postId, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["feed"], context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["feed"] });
+    },
+  });
+
+  const handleBookmark = async (postId) => {
+    return bookmarkMutation.mutateAsync(postId);
   };
 
   // ── Create post handler ──────────────────────────────────────────────
@@ -113,14 +162,21 @@ export default function HomePage() {
     images.forEach((file) => formData.append("images", file));
 
     setIsCreating(true);
+
     try {
       await postAPI.create(formData);
       setIsCreateOpen(false);
-      // Refetch feed from the beginning
       await queryClient.invalidateQueries({ queryKey: ["feed"] });
+
+      // Scroll to top to show new post
+      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      // Show success toast
+      setToast({ type: "success", message: "Đã đăng bài thành công!" });
     } finally {
       setIsCreating(false);
     }
+    // Note: errors are caught and displayed by CreatePostModal internally
   };
 
   // ── Right column: suggestions + trending ─────────────────────────────
@@ -283,7 +339,12 @@ export default function HomePage() {
 
           <div className="space-y-3 mt-2">
             {posts.map((post) => (
-              <PostCard key={post.id} post={post} onLike={handleLike} />
+              <PostCard
+                key={post.id}
+                post={post}
+                onLike={handleLike}
+                onBookmark={handleBookmark}
+              />
             ))}
           </div>
 
@@ -404,12 +465,22 @@ export default function HomePage() {
         </aside>
       </main>
 
+      {/* Create Post Modal */}
       {isCreateOpen && (
         <CreatePostModal
           isOpen={isCreateOpen}
           onClose={() => setIsCreateOpen(false)}
           onSubmit={handleCreatePost}
           isSubmitting={isCreating}
+        />
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          type={toast.type}
+          message={toast.message}
+          onClose={() => setToast(null)}
         />
       )}
     </div>
@@ -435,5 +506,34 @@ function SidebarItem({ icon: Icon, label, to, active, disabled }) {
     <Link to={to} className="block">
       {content}
     </Link>
+  );
+}
+
+function Toast({ type, message, onClose }) {
+  const isSuccess = type === "success";
+
+  return (
+    <div className="fixed bottom-4 right-4 z-50 animate-slide-up">
+      <div
+        className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border ${
+          isSuccess
+            ? "bg-green-50 border-green-200 text-green-800"
+            : "bg-red-50 border-red-200 text-red-800"
+        }`}
+      >
+        {isSuccess ? (
+          <CheckCircle className="w-5 h-5 text-green-500" />
+        ) : (
+          <XCircle className="w-5 h-5 text-red-500" />
+        )}
+        <p className="text-sm font-medium">{message}</p>
+        <button
+          onClick={onClose}
+          className="ml-2 text-gray-400 hover:text-gray-600"
+        >
+          <XCircle className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
   );
 }

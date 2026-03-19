@@ -14,6 +14,7 @@ urlpatterns = [
     path("users/me/", views.UpdateMyProfileView.as_view(), name="user-update-me"),
     path("users/search/", views.UserSearchView.as_view(), name="user-search"),
     path("users/suggestions/", views.SuggestionsView.as_view(), name="user-suggestions"),
+    path("users/<str:username>/posts/", views.UserPostsView.as_view(), name="user-posts"),
     path("users/<str:username>/", views.UserProfileView.as_view(), name="user-profile"),
 
     # --- Friends ------------------------------------------------------------

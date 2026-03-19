@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Camera,
   Pencil,
@@ -12,13 +13,18 @@ import {
   Image,
   Users,
   Loader2,
+  MessageCircle,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useProfile } from "../hooks/useProfile";
 import { useFriend } from "../hooks/useFriend";
-import { friendsAPI } from "../services/api";
+import { friendsAPI, profileAPI, postAPI, chatAPI } from "../services/api";
 import EditProfileModal from "../components/profile/EditProfileModal";
 import FriendCard from "../components/profile/FriendCard";
+import PostCard, { PostCardSkeleton } from "../components/PostCard";
+import ImageViewer from "../components/ImageViewer";
 
 // ── Tab constants ──────────────────────────────────────────────────────────
 const TABS = { POSTS: "posts", PHOTOS: "photos", FRIENDS: "friends" };
@@ -31,7 +37,9 @@ const TAB_CONFIG = [
 // ── ProfilePage ────────────────────────────────────────────────────────────
 export default function ProfilePage() {
   const { username } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const { profile, isLoading, error, refetch, updateFriendshipStatus } =
     useProfile(username);
   const { actionLoading, sendRequest, accept, reject, unfriend } = useFriend();
@@ -41,9 +49,22 @@ export default function ProfilePage() {
   const [friends, setFriends] = useState([]);
   const [friendsLoading, setFriendsLoading] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [messageBusy, setMessageBusy] = useState(false);
+  const [toast, setToast] = useState(null);
   const dropdownRef = useRef(null);
 
+  // Photo lightbox state
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
   const isOwnProfile = user?.username === username;
+
+  // ── Toast auto-dismiss ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 3000);
+    return () => clearTimeout(timer);
+  }, [toast]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -56,6 +77,102 @@ export default function ProfilePage() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  // ── Fetch user posts ──────────────────────────────────────────────────
+  const {
+    data: postsData,
+    isLoading: postsLoading,
+    isError: postsError,
+  } = useQuery({
+    queryKey: ["user-posts", username],
+    queryFn: async () => {
+      const res = await profileAPI.getUserPosts(username);
+      return Array.isArray(res.data) ? res.data : res.data.results ?? [];
+    },
+    enabled: !!username && !!profile,
+  });
+
+  const posts = postsData || [];
+
+  // Extract all photos from posts
+  const allPhotos = useMemo(() => {
+    const photos = [];
+    posts.forEach((post) => {
+      if (Array.isArray(post.images)) {
+        post.images.forEach((img) => {
+          const url = typeof img === "string" ? img : img.image || img.url;
+          if (url) {
+            photos.push({ url, postId: post.id });
+          }
+        });
+      }
+    });
+    return photos;
+  }, [posts]);
+
+  // ── Optimistic like mutation ──────────────────────────────────────────
+  const likeMutation = useMutation({
+    mutationFn: (postId) => postAPI.toggleLike(postId),
+    onMutate: async (postId) => {
+      await queryClient.cancelQueries({ queryKey: ["user-posts", username] });
+      const previous = queryClient.getQueryData(["user-posts", username]);
+
+      queryClient.setQueryData(["user-posts", username], (old) => {
+        if (!old) return old;
+        return old.map((post) => {
+          if (post.id !== postId) return post;
+          const nextLiked = !post.is_liked;
+          const nextCount = (post.like_count || 0) + (nextLiked ? 1 : -1);
+          return { ...post, is_liked: nextLiked, like_count: nextCount };
+        });
+      });
+
+      return { previous };
+    },
+    onError: (_err, _postId, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["user-posts", username], context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["user-posts", username] });
+    },
+  });
+
+  const handleLike = async (postId) => {
+    return likeMutation.mutateAsync(postId);
+  };
+
+  // ── Bookmark mutation ─────────────────────────────────────────────────
+  const bookmarkMutation = useMutation({
+    mutationFn: (postId) => postAPI.toggleSave(postId),
+    onMutate: async (postId) => {
+      await queryClient.cancelQueries({ queryKey: ["user-posts", username] });
+      const previous = queryClient.getQueryData(["user-posts", username]);
+
+      queryClient.setQueryData(["user-posts", username], (old) => {
+        if (!old) return old;
+        return old.map((post) => {
+          if (post.id !== postId) return post;
+          return { ...post, is_saved: !post.is_saved };
+        });
+      });
+
+      return { previous };
+    },
+    onError: (_err, _postId, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["user-posts", username], context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["user-posts", username] });
+    },
+  });
+
+  const handleBookmark = async (postId) => {
+    return bookmarkMutation.mutateAsync(postId);
+  };
+
   // Fetch friends list when Friends tab is active
   useEffect(() => {
     if (activeTab !== TABS.FRIENDS || !profile) return;
@@ -67,31 +184,95 @@ export default function ProfilePage() {
       .finally(() => setFriendsLoading(false));
   }, [activeTab, profile]);
 
-  // ── Friendship action handlers ─────────────────────────────────────────
+  // ── Friendship action handlers with optimistic update ──────────────────
   const handleSendRequest = async () => {
+    const prevStatus = profile?.friendship_status;
     try {
-      await sendRequest(profile.id);
+      // Optimistic update
       updateFriendshipStatus("sent");
-    } catch {}
+      await sendRequest(profile.id);
+      // Refetch to get accurate data
+      await refetch();
+      setToast({ type: "success", message: "Đã gửi lời mời kết bạn" });
+    } catch (err) {
+      // Rollback on error
+      updateFriendshipStatus(prevStatus);
+      const message = err?.response?.data?.detail || "Không thể gửi lời mời";
+      setToast({ type: "error", message });
+    }
   };
+
   const handleAccept = async () => {
+    const prevStatus = profile?.friendship_status;
     try {
-      await accept(profile.id);
+      // Optimistic update
       updateFriendshipStatus("accepted");
-    } catch {}
+      await accept(profile.id);
+      // Refetch to get accurate data
+      await refetch();
+      setToast({ type: "success", message: "Đã chấp nhận lời mời kết bạn" });
+    } catch (err) {
+      // Rollback on error
+      updateFriendshipStatus(prevStatus);
+      const message = err?.response?.data?.detail || "Không thể chấp nhận lời mời";
+      setToast({ type: "error", message });
+    }
   };
+
   const handleReject = async () => {
+    const prevStatus = profile?.friendship_status;
     try {
+      // Optimistic update
+      updateFriendshipStatus("none");
       await reject(profile.id);
-      updateFriendshipStatus("none");
-    } catch {}
+      // Refetch to get accurate data
+      await refetch();
+      setToast({ type: "success", message: "Đã huỷ lời mời" });
+    } catch (err) {
+      // Rollback on error
+      updateFriendshipStatus(prevStatus);
+      const message = err?.response?.data?.detail || "Không thể huỷ lời mời";
+      setToast({ type: "error", message });
+    }
   };
+
   const handleUnfriend = async () => {
+    const prevStatus = profile?.friendship_status;
+    setDropdownOpen(false);
     try {
-      await unfriend(profile.id);
+      // Optimistic update
       updateFriendshipStatus("none");
-      setDropdownOpen(false);
-    } catch {}
+      await unfriend(profile.id);
+      // Refetch to get accurate data
+      await refetch();
+      setToast({ type: "success", message: "Đã huỷ kết bạn" });
+    } catch (err) {
+      // Rollback on error
+      updateFriendshipStatus(prevStatus);
+      const message = err?.response?.data?.detail || "Không thể huỷ kết bạn";
+      setToast({ type: "error", message });
+    }
+  };
+
+  // ── Message handler ────────────────────────────────────────────────────
+  const handleMessage = async () => {
+    if (!profile?.id || messageBusy) return;
+    setMessageBusy(true);
+    try {
+      await chatAPI.createConversation(profile.id);
+      navigate("/messages");
+    } catch (err) {
+      const message = err?.response?.data?.detail || "Không thể tạo cuộc trò chuyện";
+      setToast({ type: "error", message });
+    } finally {
+      setMessageBusy(false);
+    }
+  };
+
+  // ── Photo click handler ────────────────────────────────────────────────
+  const handlePhotoClick = (index) => {
+    setLightboxIndex(index);
+    setLightboxOpen(true);
   };
 
   // ── Loading / error states ─────────────────────────────────────────────
@@ -175,6 +356,7 @@ export default function ProfilePage() {
                 status={profile.friendship_status}
                 isOwnProfile={isOwnProfile}
                 loading={actionLoading}
+                messageBusy={messageBusy}
                 dropdownOpen={dropdownOpen}
                 dropdownRef={dropdownRef}
                 onEdit={() => setShowEditModal(true)}
@@ -182,6 +364,7 @@ export default function ProfilePage() {
                 onAccept={handleAccept}
                 onReject={handleReject}
                 onUnfriend={handleUnfriend}
+                onMessage={handleMessage}
                 onToggleDropdown={() => setDropdownOpen((v) => !v)}
               />
             </div>
@@ -225,20 +408,78 @@ export default function ProfilePage() {
 
       {/* ── Tab content ───────────────────────────────────────────────── */}
       <div className="max-w-4xl mx-auto px-4 sm:px-8 py-6">
+        {/* Posts Tab */}
         {activeTab === TABS.POSTS && (
-          <EmptyState
-            icon={<FileText className="h-12 w-12" />}
-            message="Chưa có bài viết nào"
-          />
+          <>
+            {postsLoading ? (
+              <div className="space-y-4">
+                <PostCardSkeleton />
+                <PostCardSkeleton />
+                <PostCardSkeleton />
+              </div>
+            ) : postsError ? (
+              <div className="bg-white rounded-2xl border border-red-100 text-red-600 text-sm p-4">
+                <p className="font-medium">Không thể tải bài viết.</p>
+              </div>
+            ) : posts.length === 0 ? (
+              <EmptyState
+                icon={<FileText className="h-12 w-12" />}
+                message="Chưa có bài viết nào"
+              />
+            ) : (
+              <div className="space-y-4">
+                {posts.map((post) => (
+                  <PostCard
+                    key={post.id}
+                    post={post}
+                    onLike={handleLike}
+                    onBookmark={handleBookmark}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
 
+        {/* Photos Tab */}
         {activeTab === TABS.PHOTOS && (
-          <EmptyState
-            icon={<Image className="h-12 w-12" />}
-            message="Chưa có ảnh nào"
-          />
+          <>
+            {postsLoading ? (
+              <div className="grid grid-cols-3 gap-1 sm:gap-2">
+                {[...Array(9)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="aspect-square bg-gray-200 rounded-lg animate-pulse"
+                  />
+                ))}
+              </div>
+            ) : allPhotos.length === 0 ? (
+              <EmptyState
+                icon={<Image className="h-12 w-12" />}
+                message="Chưa có ảnh nào"
+              />
+            ) : (
+              <div className="grid grid-cols-3 gap-1 sm:gap-2">
+                {allPhotos.map((photo, idx) => (
+                  <button
+                    key={`${photo.postId}-${idx}`}
+                    type="button"
+                    onClick={() => handlePhotoClick(idx)}
+                    className="aspect-square overflow-hidden rounded-lg bg-gray-100 hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <img
+                      src={photo.url}
+                      alt={`Ảnh ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
         )}
 
+        {/* Friends Tab */}
         {activeTab === TABS.FRIENDS && (
           <>
             {friendsLoading ? (
@@ -272,6 +513,25 @@ export default function ProfilePage() {
           }}
         />
       )}
+
+      {/* ── Photo Lightbox ────────────────────────────────────────────── */}
+      {lightboxOpen && allPhotos.length > 0 && (
+        <ImageViewer
+          images={allPhotos.map((p) => p.url)}
+          initialIndex={lightboxIndex}
+          isOpen={lightboxOpen}
+          onClose={() => setLightboxOpen(false)}
+        />
+      )}
+
+      {/* ── Toast Notification ────────────────────────────────────────── */}
+      {toast && (
+        <Toast
+          type={toast.type}
+          message={toast.message}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }
@@ -296,14 +556,45 @@ function EmptyState({ icon, message }) {
   );
 }
 
+function Toast({ type, message, onClose }) {
+  const isSuccess = type === "success";
+
+  return (
+    <div className="fixed bottom-4 right-4 z-50 animate-slide-up">
+      <div
+        className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border ${
+          isSuccess
+            ? "bg-green-50 border-green-200 text-green-800"
+            : "bg-red-50 border-red-200 text-red-800"
+        }`}
+      >
+        {isSuccess ? (
+          <CheckCircle className="w-5 h-5 text-green-500" />
+        ) : (
+          <XCircle className="w-5 h-5 text-red-500" />
+        )}
+        <p className="text-sm font-medium">{message}</p>
+        <button
+          onClick={onClose}
+          className="ml-2 text-gray-400 hover:text-gray-600"
+        >
+          <XCircle className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ActionButtons({
   status,
   isOwnProfile,
   loading,
+  messageBusy,
   onEdit,
   onSendRequest,
   onAccept,
   onReject,
+  onMessage,
   dropdownOpen,
   dropdownRef,
   onToggleDropdown,
@@ -325,6 +616,20 @@ function ActionButtons({
 
   return (
     <div className="flex items-center gap-2">
+      {/* Message button - always show for non-own profiles */}
+      <button
+        onClick={onMessage}
+        disabled={messageBusy}
+        className={secondary}
+      >
+        {messageBusy ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <MessageCircle className="h-4 w-4" />
+        )}
+        Nhắn tin
+      </button>
+
       {/* None → Kết bạn */}
       {status === "none" && (
         <button onClick={onSendRequest} disabled={loading} className={primary}>
