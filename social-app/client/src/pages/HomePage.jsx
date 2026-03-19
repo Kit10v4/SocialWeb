@@ -149,6 +149,19 @@ export default function HomePage() {
     return bookmarkMutation.mutateAsync(postId);
   };
 
+  const removePostFromFeed = (postId) => {
+    queryClient.setQueryData(["feed"], (old) => {
+      if (!old) return old;
+      return {
+        ...old,
+        pages: old.pages.map((page) => ({
+          ...page,
+          results: (page.results || []).filter((post) => post.id !== postId),
+        })),
+      };
+    });
+  };
+
   // ── Create post handler ──────────────────────────────────────────────
   const handleCreatePost = async ({ content, images, privacy }) => {
     const formData = new FormData();
@@ -351,6 +364,7 @@ export default function HomePage() {
                 post={post}
                 onLike={handleLike}
                 onBookmark={handleBookmark}
+                onDelete={removePostFromFeed}
               />
             ))}
           </div>

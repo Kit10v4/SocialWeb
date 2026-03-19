@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { commentAPI } from "../services/api";
+import { commentAPI, postAPI } from "../services/api";
 import { useToast } from "./shared/Toast";
 import ImageViewer from "./ImageViewer";
 import CommentSection from "./CommentSection";
+import EditPostModal from "./EditPostModal";
 
 function formatRelativeTime(dateInput) {
   const date = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
@@ -123,6 +125,7 @@ export default function PostCard({
   onCommentClick,
   onShare,
   onBookmark,
+  onDelete,
   compact = false,
   isLoading = false,
   error,
@@ -134,12 +137,20 @@ export default function PostCard({
   const [localLikeCount, setLocalLikeCount] = useState(post?.like_count || 0);
   const [localCommentCount, setLocalCommentCount] = useState(post?.comment_count || 0);
   const [localSaved, setLocalSaved] = useState(post?.is_saved || false);
+  const [localContent, setLocalContent] = useState(
+    typeof post?.content === "string" ? post?.content : post?.rawContent || ""
+  );
+  const [localPrivacy, setLocalPrivacy] = useState(post?.privacy || "");
   const [likeBusy, setLikeBusy] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [showContentFull, setShowContentFull] = useState(false);
   const [isTruncated, setIsTruncated] = useState(false);
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [internalError, setInternalError] = useState("");
+  const menuRef = useRef(null);
 
   // Comment section states
   const [showComments, setShowComments] = useState(false);
@@ -170,6 +181,25 @@ export default function PostCard({
   useEffect(() => {
     setLocalSaved(post?.is_saved || false);
   }, [post?.is_saved]);
+
+  useEffect(() => {
+    setLocalContent(typeof post?.content === "string" ? post?.content : post?.rawContent || "");
+  }, [post?.content, post?.rawContent]);
+
+  useEffect(() => {
+    setLocalPrivacy(post?.privacy || "");
+  }, [post?.privacy]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [menuOpen]);
 
   const likeSummary = useMemo(
     () =>
@@ -261,6 +291,50 @@ export default function PostCard({
     }
   };
 
+  const handleDelete = async () => {
+    if (!post || deleteBusy) return;
+    const confirmed = window.confirm("Bạn có chắc muốn xoá bài viết này không?");
+    if (!confirmed) return;
+    setDeleteBusy(true);
+    setInternalError("");
+    try {
+      await postAPI.delete(post.id);
+      onDelete?.(post.id);
+      showToast("success", "Đã xoá bài viết");
+    } catch (err) {
+      const message = err?.response?.data?.detail || err?.message || "Không thể xoá bài viết.";
+      setInternalError(message);
+    } finally {
+      setDeleteBusy(false);
+      setMenuOpen(false);
+    }
+  };
+
+  const handleUpdate = async ({ content, privacy }) => {
+    if (!post) return;
+    const nextContent = content ?? "";
+    const nextPrivacy = privacy ?? localPrivacy;
+    const prevContent = localContent;
+    const prevPrivacy = localPrivacy;
+    setLocalContent(nextContent);
+    setLocalPrivacy(nextPrivacy);
+    setEditOpen(false);
+    setInternalError("");
+    try {
+      await postAPI.update(post.id, {
+        content: nextContent,
+        privacy: nextPrivacy,
+      });
+    } catch (err) {
+      setLocalContent(prevContent);
+      setLocalPrivacy(prevPrivacy);
+      const message =
+        err?.response?.data?.detail || err?.message || "Không thể cập nhật bài viết.";
+      setInternalError(message);
+      showToast("error", "Không thể cập nhật bài viết");
+    }
+  };
+
   // Submit comment handler
   const handleSubmitComment = async (text, parentId = null) => {
     if (!post?.id) return;
@@ -326,6 +400,9 @@ export default function PostCard({
   if (isLoading) return <PostCardSkeleton />;
 
   if (!post) return null;
+  const isOwner = String(post.author?.id) === String(user?.id);
+  const displayContent =
+    typeof post?.content === "string" ? localContent : post?.content || localContent;
 
   return (
     <article className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5 mb-4">
@@ -343,7 +420,7 @@ export default function PostCard({
             </div>
             <div className="flex items-center gap-1 text-xs text-gray-500">
               <span>{formatRelativeTime(post.created_at)}</span>
-              {post.privacy && <span>· {post.privacy}</span>}
+              {localPrivacy && <span>· {localPrivacy}</span>}
               {post.is_trending && (
                 <span className="ml-1 text-[10px] text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-full">
                   🔥 Đang hot
@@ -352,10 +429,45 @@ export default function PostCard({
             </div>
           </div>
         </div>
+        {isOwner && (
+          <div className="relative" ref={menuRef}>
+            <button
+              type="button"
+              onClick={() => setMenuOpen((v) => !v)}
+              className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500"
+            >
+              <MoreHorizontal className="w-5 h-5" />
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg z-10 overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditOpen(true);
+                    setMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <Pencil className="w-4 h-4" />
+                  Chỉnh sửa bài viết
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleteBusy}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Xoá bài viết
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Content */}
-      {post.content && (
+      {displayContent && (
         <div className="mb-3">
           <p
             ref={contentRef}
@@ -363,7 +475,7 @@ export default function PostCard({
               showContentFull ? "max-h-none" : "max-h-20 overflow-hidden"
             }`}
           >
-            {post.content}
+            {displayContent}
           </p>
           {isTruncated && !showContentFull && (
             <button
@@ -529,6 +641,15 @@ export default function PostCard({
           initialIndex={activeImageIndex}
           isOpen={imageViewerOpen}
           onClose={() => setImageViewerOpen(false)}
+        />
+      )}
+
+      {editOpen && (
+        <EditPostModal
+          isOpen={editOpen}
+          post={{ ...post, content: localContent, privacy: localPrivacy }}
+          onClose={() => setEditOpen(false)}
+          onSubmit={handleUpdate}
         />
       )}
     </article>

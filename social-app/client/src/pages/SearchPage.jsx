@@ -121,6 +121,7 @@ export default function SearchPage() {
     () =>
       postResults.map((post) => ({
         ...post,
+        rawContent: post.content,
         content: highlightText(post.content, query),
       })),
     [postResults, query]
