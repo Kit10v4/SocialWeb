@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, X } from "lucide-react";
 
@@ -11,6 +11,7 @@ import SearchUserModal from "../components/SearchUserModal";
 import BottomNav from "../components/shared/BottomNav";
 
 export default function MessagesPage() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState(null);
@@ -46,10 +47,15 @@ export default function MessagesPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 pb-20 md:pb-0">
-      <div className="md:hidden sticky top-0 bg-white border-b border-gray-100 z-40">
-        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
-          <span className="font-semibold text-base">Tin nhắn</span>
-          <Link to="/" className="p-2 rounded-full hover:bg-gray-100">
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-40">
+        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button onClick={() => navigate(-1)} className="p-2 rounded-full hover:bg-gray-100">
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <span className="font-semibold text-base">Tin nhắn</span>
+          </div>
+          <Link to="/" className="p-2 rounded-full hover:bg-gray-100 text-gray-500">
             <X className="w-5 h-5" />
           </Link>
         </div>
@@ -84,7 +90,7 @@ export default function MessagesPage() {
                   <button
                     type="button"
                     onClick={() => setSelected(null)}
-                    className="p-2 rounded-full hover:bg-gray-100 mr-2"
+                    className="p-2 rounded-full hover:bg-gray-100 mr-1 md:hidden"
                   >
                     <ArrowLeft className="w-5 h-5" />
                   </button>

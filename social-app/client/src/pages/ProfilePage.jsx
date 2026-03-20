@@ -21,6 +21,7 @@ import {
   Flag,
   Ban,
   X,
+  ArrowLeft,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useProfile } from "../hooks/useProfile";
@@ -343,6 +344,12 @@ export default function ProfilePage() {
 
           {/* Cover photo */}
           <div className="relative h-48 sm:h-60 md:h-72 bg-gradient-to-br from-blue-400 to-indigo-600 overflow-hidden">
+            <button
+              onClick={() => navigate(-1)}
+              className="absolute top-4 left-4 z-10 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm transition"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
             {profile.cover_photo && (
               <img
                 src={profile.cover_photo}
