@@ -17,13 +17,27 @@ import { useUnreadCount } from "../hooks/useUnreadCount";
 export default function HomePage() {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const { pathname } = location;
   const queryClient = useQueryClient();
   const { showToast } = useToast();
   const { unreadCount } = useUnreadCount();
 
+  const pageTitle = useMemo(() => {
+    if (pathname === "/") return "";
+    if (pathname.startsWith("/search")) return "Tìm kiếm";
+    if (pathname.startsWith("/messages")) return "Tin nhắn";
+    if (pathname.startsWith("/profile")) return "Trang cá nhân";
+    if (pathname.startsWith("/post")) return "Chi tiết bài viết";
+    return "Social App";
+  }, [pathname]);
+
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [newPostsCount, setNewPostsCount] = useState(0);
+  const [isPullRefreshing, setIsPullRefreshing] = useState(false);
   const loadMoreRef = useRef(null);
+  const touchStartYRef = useRef(0);
+  const lastNotifiedLatestIdRef = useRef(null);
 
   // ── Infinite feed query ───────────────────────────────────────────────
   // API returns posts with structure:
@@ -52,6 +66,7 @@ export default function HomePage() {
     () => data?.pages?.flatMap((page) => page.results ?? []) ?? [],
     [data]
   );
+  const latestPostId = posts[0]?.id;
 
   // ── IntersectionObserver for infinite scroll ─────────────────────────
   useEffect(() => {
@@ -66,7 +81,7 @@ export default function HomePage() {
           fetchNextPage();
         }
       },
-      { rootMargin: "0px 0px 200px 0px" }
+      { rootMargin: "0px 0px 400px 0px" }
     );
 
     observer.observe(node);
@@ -74,6 +89,48 @@ export default function HomePage() {
       observer.disconnect();
     };
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  useEffect(() => {
+    if (!latestPostId) return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await feedAPI.getFeed({});
+        const latest = res.data?.results?.[0];
+        if (!latest || posts.length === 0) return;
+        if (
+          latest.id !== latestPostId &&
+          lastNotifiedLatestIdRef.current !== latest.id
+        ) {
+          setNewPostsCount((prev) => prev + 1);
+          lastNotifiedLatestIdRef.current = latest.id;
+        }
+      } catch {
+        // ignore polling errors
+      }
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [latestPostId, posts.length]);
+
+  const refreshFeed = async () => {
+    await queryClient.invalidateQueries({ queryKey: ["feed"] });
+    setNewPostsCount(0);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleTouchStart = (e) => {
+    touchStartYRef.current = e.touches[0]?.clientY ?? 0;
+  };
+
+  const handleTouchEnd = async (e) => {
+    const endY = e.changedTouches[0]?.clientY ?? 0;
+    const diff = endY - touchStartYRef.current;
+    if (diff > 80 && window.scrollY === 0 && !isPullRefreshing) {
+      setIsPullRefreshing(true);
+      await queryClient.invalidateQueries({ queryKey: ["feed"] });
+      setNewPostsCount(0);
+      setTimeout(() => setIsPullRefreshing(false), 500);
+    }
+  };
 
   // ── Optimistic like mutation using React Query ───────────────────────
   const likeMutation = useMutation({
@@ -217,14 +274,25 @@ export default function HomePage() {
   const atEnd = !hasNextPage && posts.length > 0;
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-16 md:pb-0">
+    <div className="min-h-screen bg-gray-100 pb-20 md:pb-0">
       {/* Navbar */}
       <nav className="bg-white shadow-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 h-12 sm:h-14 flex items-center justify-between">
-          <span className="text-lg sm:text-xl font-bold text-blue-600">
-            <span className="sm:hidden">SA</span>
-            <span className="hidden sm:inline">Social App</span>
+          <span className="text-lg sm:text-xl font-bold text-blue-600 min-w-[60px]">
+            {pathname === "/" ? (
+              <>
+                <span className="sm:hidden">SA</span>
+                <span className="hidden sm:inline">Social App</span>
+              </>
+            ) : (
+              <span className="sm:hidden">SA</span>
+            )}
           </span>
+          {pathname !== "/" && (
+            <span className="sm:hidden absolute left-1/2 -translate-x-1/2 text-sm font-semibold text-gray-800">
+              {pageTitle}
+            </span>
+          )}
           <div className="flex items-center gap-3">
             <NotificationBell />
             <Link to="/messages" className="relative p-2 rounded-full hover:bg-gray-100">
@@ -295,26 +363,31 @@ export default function HomePage() {
               icon={Home}
               label="Home"
               to="/"
-              active={location.pathname === "/"}
+              active={pathname === "/"}
             />
             <SidebarItem
               icon={Users}
               label="Friends"
               to="/search"
+              active={pathname === "/search" || pathname.startsWith("/search")}
             />
             <SidebarItem
               icon={MessageCircle}
               label="Messages"
               to="/messages"
-              active={location.pathname.startsWith("/messages")}
+              active={pathname.startsWith("/messages")}
             />
             <SidebarItem icon={Bell} label="Notifications" disabled />
           </nav>
         </aside>
 
         {/* Middle column – stories + composer + feed */}
-        <section className="w-full md:flex-1 lg:w-1/2 md:max-w-2xl md:mx-auto">
-          <StoriesBar />
+         <section
+           className="w-full md:flex-1 lg:w-1/2 md:max-w-2xl md:mx-auto"
+           onTouchStart={handleTouchStart}
+           onTouchEnd={handleTouchEnd}
+         >
+           <StoriesBar />
 
           {/* Create post card */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 sm:p-4 mb-3">
@@ -343,6 +416,23 @@ export default function HomePage() {
           </div>
 
           {/* Feed list */}
+          {isPullRefreshing && (
+            <div className="flex items-center justify-center gap-2 text-xs text-blue-600 mb-3">
+              <span className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              Đang làm mới...
+            </div>
+          )}
+
+          {newPostsCount > 0 && (
+            <button
+              type="button"
+              onClick={refreshFeed}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 rounded-xl mb-3 font-medium"
+            >
+              Có {newPostsCount} bài viết mới — Nhấn để xem
+            </button>
+          )}
+
           {isLoading && (
             <div className="space-y-3">
               <SkeletonCard />
@@ -391,6 +481,16 @@ export default function HomePage() {
 
           {/* Infinite scroll sentinel & loading more */}
           <div ref={loadMoreRef} className="h-8" />
+
+          {hasNextPage && !isFetchingNextPage && (
+            <button
+              type="button"
+              onClick={() => fetchNextPage()}
+              className="w-full py-2 text-sm text-blue-600 font-medium border border-blue-200 rounded-xl hover:bg-blue-50"
+            >
+              Tải thêm bài viết
+            </button>
+          )}
 
           {isFetchingNextPage && (
             <div className="mt-2 space-y-3">
@@ -523,10 +623,18 @@ export default function HomePage() {
 }
 
 function SidebarItem({ icon: Icon, label, to, active, disabled }) {
+  const { pathname } = useLocation();
+  const resolvedActive =
+    typeof active === "boolean"
+      ? active
+      : to === "/"
+        ? pathname === "/"
+        : pathname.startsWith(to);
+
   const content = (
     <div
       className={`flex items-center gap-3 px-4 py-2.5 text-sm cursor-pointer transition-colors ${
-        active
+        resolvedActive
           ? "bg-blue-50 text-blue-600 font-semibold"
           : "text-gray-700 hover:bg-gray-50"
       } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}

@@ -333,7 +333,7 @@ export default function ProfilePage() {
 
   // ── Render ─────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gray-100 pb-16 md:pb-0">
+    <div className="min-h-screen bg-gray-100 pb-20 md:pb-0">
       <div className="md:hidden">
         <PageHeader title="Trang cá nhân" />
       </div>

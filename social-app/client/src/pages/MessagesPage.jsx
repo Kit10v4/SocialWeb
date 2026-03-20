@@ -45,7 +45,7 @@ export default function MessagesPage() {
   const showListMobile = showListOnMobile || !selected;
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-16 md:pb-0">
+    <div className="min-h-screen bg-gray-100 pb-20 md:pb-0">
       <div className="md:hidden sticky top-0 bg-white border-b border-gray-100 z-40">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
           <span className="font-semibold text-base">Tin nhắn</span>

@@ -144,7 +144,7 @@ export default function SearchPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-16 md:pb-0">
+    <div className="min-h-screen bg-gray-100 pb-20 md:pb-0">
       <PageHeader title="Tìm kiếm" />
       <div className="max-w-2xl mx-auto px-4 py-8 sm:py-10">
         {/* Search bar */}
