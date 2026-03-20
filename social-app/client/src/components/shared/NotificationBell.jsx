@@ -43,7 +43,7 @@ const UNREAD_KEY = "notifications_unread_count";
 function getNotificationLink(n) {
   const type = n.notification_type;
   if (type === "like" || type === "comment") {
-    return n.target_id ? `/?post=${n.target_id}` : "/";
+    return n.target_id ? `/post/${n.target_id}` : "/";
   }
   if (type === "friend_request" || type === "friend_accept") {
     return n.sender?.username ? `/profile/${n.sender.username}` : "/search";

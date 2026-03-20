@@ -4,10 +4,16 @@ from .views import (
     ConversationListCreateView,
     ConversationMarkReadView,
     MessageListView,
+    UnreadCountView,
 )
 
 urlpatterns = [
     path("conversations/", ConversationListCreateView.as_view(), name="conversation-list"),
+    path(
+        "conversations/unread-count/",
+        UnreadCountView.as_view(),
+        name="conversation-unread-count",
+    ),
     path(
         "conversations/<uuid:pk>/messages/",
         MessageListView.as_view(),

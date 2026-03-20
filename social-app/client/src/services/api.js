@@ -146,12 +146,17 @@ export const feedAPI = {
 // ── Chat API helpers ────────────────────────────────────────────────────
 export const chatAPI = {
   listConversations: () => api.get("/conversations/"),
+  getUnreadCount: () => api.get("/conversations/unread-count/"),
   createConversation: (userId) =>
     api.post("/conversations/", { user_id: userId }),
   listMessages: (conversationId, params) =>
     api.get(`/conversations/${conversationId}/messages/`, { params }),
   markRead: (conversationId) =>
     api.post(`/conversations/${conversationId}/read/`),
+};
+
+export const reportAPI = {
+  create: (data) => api.post("/reports/", data),
 };
 
 export default api;

@@ -99,3 +99,18 @@ class ConversationMarkReadView(APIView):
         )
 
         return Response({"updated": updated}, status=status.HTTP_200_OK)
+
+
+class UnreadCountView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        count = (
+            Message.objects.filter(
+                conversation__participants=request.user,
+                is_read=False,
+            )
+            .exclude(sender=request.user)
+            .count()
+        )
+        return Response({"count": count}, status=status.HTTP_200_OK)

@@ -16,16 +16,22 @@ import {
   MessageCircle,
   CheckCircle,
   XCircle,
+  MoreHorizontal,
+  Link2,
+  Flag,
+  Ban,
+  X,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useProfile } from "../hooks/useProfile";
 import { useFriend } from "../hooks/useFriend";
-import { friendsAPI, profileAPI, postAPI, chatAPI } from "../services/api";
+import { friendsAPI, profileAPI, postAPI, chatAPI, reportAPI } from "../services/api";
 import EditProfileModal from "../components/profile/EditProfileModal";
 import FriendCard from "../components/profile/FriendCard";
 import PostCard, { PostCardSkeleton } from "../components/PostCard";
 import ImageViewer from "../components/ImageViewer";
 import BottomNav from "../components/shared/BottomNav";
+import PageHeader from "../components/shared/PageHeader";
 
 // ── Tab constants ──────────────────────────────────────────────────────────
 const TABS = { POSTS: "posts", PHOTOS: "photos", FRIENDS: "friends" };
@@ -270,6 +276,35 @@ export default function ProfilePage() {
     }
   };
 
+  const handleCopyProfileLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setToast({ type: "success", message: "Đã sao chép" });
+    } catch {
+      setToast({ type: "error", message: "Không thể sao chép liên kết" });
+    }
+  };
+
+  const handleReportUser = async ({ reason, detail }) => {
+    try {
+      await reportAPI.create({
+        target_user: profile.id,
+        reason,
+        detail,
+      });
+      setToast({ type: "success", message: "Đã gửi báo cáo" });
+    } catch {
+      alert("Đã gửi báo cáo");
+    }
+  };
+
+  const handleBlockUser = () => {
+    const ok = window.confirm("Bạn có chắc muốn chặn người dùng này không?");
+    if (!ok) return;
+    setToast({ type: "success", message: "Đã chặn người dùng" });
+    navigate(-1);
+  };
+
   // ── Photo click handler ────────────────────────────────────────────────
   const handlePhotoClick = (index) => {
     setLightboxIndex(index);
@@ -299,6 +334,9 @@ export default function ProfilePage() {
   // ── Render ─────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-100 pb-16 md:pb-0">
+      <div className="md:hidden">
+        <PageHeader title="Trang cá nhân" />
+      </div>
       {/* ── Profile card ──────────────────────────────────────────────── */}
       <div className="bg-white shadow-sm">
         <div className="max-w-4xl mx-auto">
@@ -367,6 +405,9 @@ export default function ProfilePage() {
                 onUnfriend={handleUnfriend}
                 onMessage={handleMessage}
                 onToggleDropdown={() => setDropdownOpen((v) => !v)}
+                onCopyProfileLink={handleCopyProfileLink}
+                onReportUser={handleReportUser}
+                onBlockUser={handleBlockUser}
               />
             </div>
 
@@ -602,11 +643,28 @@ function ActionButtons({
   dropdownRef,
   onToggleDropdown,
   onUnfriend,
+  onCopyProfileLink,
+  onReportUser,
+  onBlockUser,
 }) {
+  const [showMenu, setShowMenu] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const menuRef = useRef(null);
   const base =
     "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition";
   const primary = `${base} bg-blue-600 hover:bg-blue-700 text-white shadow-sm`;
   const secondary = `${base} bg-gray-100 hover:bg-gray-200 text-gray-800`;
+  const messageButton = `${base} bg-blue-600 hover:bg-blue-700 text-white shadow-sm`;
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   if (isOwnProfile) {
     return (
@@ -619,20 +677,6 @@ function ActionButtons({
 
   return (
     <div className="flex items-center gap-2">
-      {/* Message button - always show for non-own profiles */}
-      <button
-        onClick={onMessage}
-        disabled={messageBusy}
-        className={secondary}
-      >
-        {messageBusy ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <MessageCircle className="h-4 w-4" />
-        )}
-        Nhắn tin
-      </button>
-
       {/* None → Kết bạn */}
       {status === "none" && (
         <button onClick={onSendRequest} disabled={loading} className={primary}>
@@ -672,27 +716,151 @@ function ActionButtons({
 
       {/* Accepted → Bạn bè + dropdown */}
       {status === "accepted" && (
-        <div className="relative" ref={dropdownRef}>
-          <button onClick={onToggleDropdown} className={secondary}>
-            <UserCheck className="h-4 w-4 text-green-600" />
-            Bạn bè
-            <ChevronDown
-              className={`h-4 w-4 transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
-            />
+        <>
+          <button
+            onClick={onMessage}
+            disabled={messageBusy}
+            className={messageButton}
+          >
+            {messageBusy ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <MessageCircle className="h-4 w-4" />
+            )}
+            Nhắn tin
           </button>
-          {dropdownOpen && (
-            <div className="absolute right-0 top-full mt-1.5 bg-white shadow-xl rounded-xl py-1 min-w-[160px] border border-gray-100 z-20">
-              <button
-                onClick={onUnfriend}
-                className="w-full flex items-center gap-2 text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition rounded-lg mx-auto"
-              >
-                <UserMinus className="h-4 w-4" />
-                Huỷ kết bạn
-              </button>
-            </div>
-          )}
-        </div>
+          <div className="relative" ref={dropdownRef}>
+            <button onClick={onToggleDropdown} className={secondary}>
+              <UserCheck className="h-4 w-4 text-green-600" />
+              Bạn bè
+              <ChevronDown
+                className={`h-4 w-4 transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+            {dropdownOpen && (
+              <div className="absolute right-0 top-full mt-1.5 bg-white shadow-xl rounded-xl py-1 min-w-[160px] border border-gray-100 z-20">
+                <button
+                  onClick={onUnfriend}
+                  className="w-full flex items-center gap-2 text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition rounded-lg mx-auto"
+                >
+                  <UserMinus className="h-4 w-4" />
+                  Huỷ kết bạn
+                </button>
+              </div>
+            )}
+          </div>
+        </>
       )}
+
+      <div className="relative" ref={menuRef}>
+        <button
+          onClick={() => setShowMenu((v) => !v)}
+          className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200"
+          type="button"
+        >
+          <MoreHorizontal className="w-5 h-5" />
+        </button>
+        {showMenu && (
+          <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-gray-100 py-1 min-w-[180px] z-20">
+            <button
+              className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2"
+              onClick={() => {
+                setShowMenu(false);
+                onCopyProfileLink?.();
+              }}
+            >
+              <Link2 className="w-4 h-4" /> Sao chép liên kết profile
+            </button>
+            <button
+              className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2 text-amber-600"
+              onClick={() => {
+                setShowMenu(false);
+                setShowReportModal(true);
+              }}
+            >
+              <Flag className="w-4 h-4" /> Báo cáo người dùng
+            </button>
+            <button
+              className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2 text-red-600"
+              onClick={() => {
+                setShowMenu(false);
+                onBlockUser?.();
+              }}
+            >
+              <Ban className="w-4 h-4" /> Chặn người dùng
+            </button>
+          </div>
+        )}
+      </div>
+
+      {showReportModal && (
+        <ReportModal
+          onClose={() => setShowReportModal(false)}
+          onSubmit={async (payload) => {
+            await onReportUser?.(payload);
+            setShowReportModal(false);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function ReportModal({ onClose, onSubmit }) {
+  const [reason, setReason] = useState("spam");
+  const [detail, setDetail] = useState("");
+  const options = [
+    { value: "spam", label: "Spam" },
+    { value: "sensitive", label: "Nội dung phản cảm" },
+    { value: "impersonation", label: "Giả mạo" },
+    { value: "other", label: "Khác" },
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-100">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+          <p className="font-semibold text-sm">Báo cáo người dùng</p>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="p-4 space-y-3">
+          {options.map((item) => (
+            <label key={item.value} className="flex items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name="report-reason"
+                value={item.value}
+                checked={reason === item.value}
+                onChange={(e) => setReason(e.target.value)}
+              />
+              {item.label}
+            </label>
+          ))}
+          <textarea
+            value={detail}
+            onChange={(e) => setDetail(e.target.value)}
+            rows={4}
+            placeholder="Mô tả thêm (không bắt buộc)"
+            className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <div className="flex justify-end gap-2 pt-1">
+            <button
+              onClick={onClose}
+              className="px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-sm font-medium"
+            >
+              Huỷ
+            </button>
+            <button
+              onClick={() => onSubmit?.({ reason, detail })}
+              className="px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold"
+            >
+              Gửi báo cáo
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -12,12 +12,14 @@ import CreatePostModal from "../components/CreatePostModal";
 import StoriesBar from "../components/StoriesBar";
 import SkeletonCard from "../components/shared/SkeletonCard";
 import { useToast } from "../components/shared/Toast";
+import { useUnreadCount } from "../hooks/useUnreadCount";
 
 export default function HomePage() {
   const { user, logout } = useAuth();
   const location = useLocation();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
+  const { unreadCount } = useUnreadCount();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -225,9 +227,27 @@ export default function HomePage() {
           </span>
           <div className="flex items-center gap-3">
             <NotificationBell />
-            <span className="hidden sm:inline text-sm text-gray-700">
-              {user?.username}
-            </span>
+            <Link to="/messages" className="relative p-2 rounded-full hover:bg-gray-100">
+              <MessageCircle className="w-5 h-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-semibold flex items-center justify-center">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </Link>
+            <Link
+              to={`/profile/${user?.username}`}
+              className="flex items-center gap-2 hover:opacity-80 cursor-pointer"
+            >
+              <img
+                src={user?.avatar || "https://i.pravatar.cc/100?img=67"}
+                alt={user?.username || "user"}
+                className="w-8 h-8 rounded-full object-cover"
+              />
+              <span className="hidden sm:inline text-sm font-medium text-gray-700">
+                {user?.username}
+              </span>
+            </Link>
             <button
               onClick={async () => {
                 await logout();

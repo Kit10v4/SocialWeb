@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Search, UserPlus, Clock, UserCheck, Loader2, X } from "lucide-react";
 import { profileAPI, friendsAPI, postAPI } from "../services/api";
 import PostCard from "../components/PostCard";
 import BottomNav from "../components/shared/BottomNav";
 import { useToast } from "../components/shared/Toast";
+import PageHeader from "../components/shared/PageHeader";
 
 const TABS = {
   USERS: "users",
@@ -34,7 +35,8 @@ function highlightText(text, query) {
 
 // ── SearchPage ─────────────────────────────────────────────────────────────
 export default function SearchPage() {
-  const [query, setQuery] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [query, setQuery] = useState(searchParams.get("q") || "");
   const [activeTab, setActiveTab] = useState(TABS.USERS);
   const [userResults, setUserResults] = useState([]);
   const [postResults, setPostResults] = useState([]);
@@ -51,6 +53,20 @@ export default function SearchPage() {
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  useEffect(() => {
+    const q = searchParams.get("q") || "";
+    if (q !== query) setQuery(q);
+  }, [searchParams, query]);
+
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (trimmed) {
+      setSearchParams({ q: trimmed });
+    } else {
+      setSearchParams({});
+    }
+  }, [query, setSearchParams]);
 
   // Debounced search — fires 300 ms after the user stops typing
   useEffect(() => {
@@ -129,6 +145,7 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 pb-16 md:pb-0">
+      <PageHeader title="Tìm kiếm" />
       <div className="max-w-2xl mx-auto px-4 py-8 sm:py-10">
         {/* Search bar */}
         <div className="relative">

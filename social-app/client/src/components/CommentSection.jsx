@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 const DEFAULT_AVATAR = "https://ui-avatars.com/api/?background=random&name=U";
 
@@ -114,11 +115,13 @@ export default function CommentSection({
           <div className="space-y-3">
             {toShow.map((comment) => (
               <div key={comment.id} className="flex items-start gap-2">
-                <img
-                  src={getAvatarUrl(comment.author?.avatarUrl, comment.author?.name)}
-                  alt={comment.author?.name}
-                  className="w-8 h-8 rounded-full object-cover bg-gray-200 mt-0.5"
-                />
+                <Link to={`/profile/${comment.author?.name}`}>
+                  <img
+                    src={getAvatarUrl(comment.author?.avatarUrl, comment.author?.name)}
+                    alt={comment.author?.name}
+                    className="w-8 h-8 rounded-full object-cover bg-gray-200 mt-0.5 cursor-pointer hover:opacity-80"
+                  />
+                </Link>
                 <div className="flex-1">
                   <div className="inline-block rounded-2xl bg-gray-100 px-3 py-2">
                     <p className="text-xs font-semibold text-gray-900">
@@ -152,11 +155,13 @@ export default function CommentSection({
                     <div className="mt-2 space-y-2 pl-8">
                       {comment.replies.map((reply) => (
                         <div key={reply.id} className="flex items-start gap-2">
-                          <img
-                            src={getAvatarUrl(reply.author?.avatarUrl, reply.author?.name)}
-                            alt={reply.author?.name}
-                            className="w-7 h-7 rounded-full object-cover bg-gray-200 mt-0.5"
-                          />
+                          <Link to={`/profile/${reply.author?.name}`}>
+                            <img
+                              src={getAvatarUrl(reply.author?.avatarUrl, reply.author?.name)}
+                              alt={reply.author?.name}
+                              className="w-7 h-7 rounded-full object-cover bg-gray-200 mt-0.5 cursor-pointer hover:opacity-80"
+                            />
+                          </Link>
                           <div>
                             <div className="inline-block rounded-2xl bg-gray-100 px-3 py-2">
                               <p className="text-xs font-semibold text-gray-900">

@@ -6,6 +6,7 @@ import { useAuth } from "../context/AuthContext";
 import { commentAPI, postAPI } from "../services/api";
 import PostCard, { PostCardSkeleton } from "../components/PostCard";
 import CommentSection from "../components/CommentSection";
+import PageHeader from "../components/shared/PageHeader";
 import NotFoundPage from "./NotFoundPage";
 
 function transformComment(comment) {
@@ -111,6 +112,9 @@ export default function PostDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 pb-16 md:pb-0">
+      <div className="md:hidden">
+        <PageHeader title="Chi tiết bài viết" />
+      </div>
       <div className="max-w-3xl mx-auto px-2 sm:px-4 py-4">
         <button
           type="button"

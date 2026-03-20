@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Smile, Loader2, Check, CheckCheck } from "lucide-react";
+import { Link } from "react-router-dom";
 
 import { useAuth } from "../context/AuthContext";
 import { useChat } from "../hooks/useChat";
@@ -145,7 +146,12 @@ export default function ChatBox({ conversation }) {
           />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-gray-900 truncate">{title}</p>
+          <Link
+            to={`/profile/${otherParticipants[0]?.username}`}
+            className="text-sm font-semibold text-gray-900 truncate hover:underline cursor-pointer block"
+          >
+            {title}
+          </Link>
           <p className="text-[11px] text-gray-400">
             {!isConnected
               ? "Đang kết nối..."

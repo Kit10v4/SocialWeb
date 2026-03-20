@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, X } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
 import { chatAPI } from "../services/api";
@@ -44,6 +46,14 @@ export default function MessagesPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 pb-16 md:pb-0">
+      <div className="md:hidden sticky top-0 bg-white border-b border-gray-100 z-40">
+        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between gap-3">
+          <span className="font-semibold text-base">Tin nhắn</span>
+          <Link to="/" className="p-2 rounded-full hover:bg-gray-100">
+            <X className="w-5 h-5" />
+          </Link>
+        </div>
+      </div>
       <div className="max-w-5xl mx-auto px-2 sm:px-4 py-4 h-[calc(100vh-1rem)]">
         <div className="h-full flex flex-col md:flex-row gap-3">
           {/* Left: conversation list */}
@@ -73,10 +83,10 @@ export default function MessagesPage() {
                 <div className="md:hidden mb-2 flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setShowListOnMobile(true)}
-                    className="px-3 py-1.5 text-sm font-semibold text-blue-600 bg-blue-50 border border-blue-100 rounded-lg"
+                    onClick={() => setSelected(null)}
+                    className="p-2 rounded-full hover:bg-gray-100 mr-2"
                   >
-                    ← Quay lại danh sách
+                    <ArrowLeft className="w-5 h-5" />
                   </button>
                   <p className="text-xs text-gray-500 truncate">
                     Đang chat với {selected.participants

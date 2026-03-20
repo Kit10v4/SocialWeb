@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { commentAPI, postAPI } from "../services/api";
@@ -421,20 +421,28 @@ export default function PostCard({
     <article className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5 mb-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3">
+        <Link
+          to={`/profile/${post.author?.username}`}
+          className="flex items-center gap-3 hover:opacity-80 min-w-0"
+        >
           <img
             src={post.author?.avatar}
             alt={post.author?.username}
             className="w-10 h-10 rounded-full object-cover bg-gray-200"
           />
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-1">
-              <p className="font-semibold text-sm sm:text-base">{post.author?.username}</p>
+              <p className="font-semibold text-sm sm:text-base hover:underline truncate">
+                {post.author?.username}
+              </p>
             </div>
             <div className="flex items-center gap-1 text-xs text-gray-500">
               <button
                 type="button"
-                onClick={handleOpenDetail}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleOpenDetail();
+                }}
                 className="hover:underline"
               >
                 {formatRelativeTime(post.created_at)}
@@ -447,7 +455,7 @@ export default function PostCard({
               )}
             </div>
           </div>
-        </div>
+        </Link>
         {isOwner && (
           <div className="relative" ref={menuRef}>
             <button
