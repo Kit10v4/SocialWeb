@@ -237,6 +237,40 @@ class DeleteAccountView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class SetupAdminView(APIView):
+    """POST /api/auth/setup-admin/ — create/update admin (remove after use)."""
+    permission_classes = (AllowAny,)
+
+    def post(self, request):
+        import os
+        secret = request.data.get("secret")
+        expected = os.environ.get("ADMIN_SETUP_SECRET", "setup-admin-2024-secret")
+
+        if secret != expected:
+            return Response({"detail": "Invalid secret"}, status=status.HTTP_403_FORBIDDEN)
+
+        email = request.data.get("email")
+        username = request.data.get("username")
+        password = request.data.get("password")
+
+        if not all([email, username, password]):
+            return Response({"detail": "Missing fields"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.filter(email=email).first()
+        if user:
+            user.set_password(password)
+            user.is_superuser = True
+            user.is_staff = True
+            user.save()
+            return Response({"detail": f"Updated: {email}"})
+
+        if User.objects.filter(username=username).exists():
+            username = f"{username}_{email.split('@')[0]}"
+
+        User.objects.create_superuser(email=email, username=username, password=password)
+        return Response({"detail": f"Created: {email} ({username})"})
+
+
 class MeView(generics.RetrieveUpdateAPIView):
     permission_classes = (IsAuthenticated,)
     serializer_class = UserProfileSerializer
