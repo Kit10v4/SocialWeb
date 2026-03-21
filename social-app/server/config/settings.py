@@ -14,7 +14,14 @@ SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-change-me-in-production")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "yes")
 
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+_allowed_hosts = os.getenv("ALLOWED_HOSTS", "")
+ALLOWED_HOSTS = [h.strip() for h in _allowed_hosts.split(",") if h.strip()]
+if not ALLOWED_HOSTS:
+    ALLOWED_HOSTS = [
+        "localhost",
+        "127.0.0.1",
+        ".onrender.com",  # Allow all Render subdomains
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -210,6 +217,23 @@ CORS_ALLOW_HEADERS = [
     "x-csrftoken",
     "x-requested-with",
 ]
+
+# ---------------------------------------------------------------------------
+# CSRF Trusted Origins (required for Django Admin on external domains)
+# ---------------------------------------------------------------------------
+
+_csrf_origins = os.getenv("CSRF_TRUSTED_ORIGINS", "")
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in _csrf_origins.split(",")
+    if origin.strip()
+]
+if not CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS = [
+        "https://social-app-api-p54k.onrender.com",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ]
 
 
 # ---------------------------------------------------------------------------
