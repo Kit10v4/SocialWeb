@@ -12,6 +12,7 @@ const MessagesPage = lazy(() => import("./pages/MessagesPage"));
 const SearchPage = lazy(() => import("./pages/SearchPage"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const PostDetailPage = lazy(() => import("./pages/PostDetailPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 
 // Loading spinner component
 function PageLoader() {
@@ -96,6 +97,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <SearchPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <SettingsPage />
             </ProtectedRoute>
           }
         />

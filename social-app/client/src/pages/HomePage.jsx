@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Home, MessageCircle, Users, LogOut, Bell } from "lucide-react";
+import { Home, MessageCircle, Users, LogOut, Bell, Settings } from "lucide-react";
 import NotificationBell from "../components/shared/NotificationBell";
 import BottomNav from "../components/shared/BottomNav";
 
@@ -316,6 +316,13 @@ export default function HomePage() {
                 {user?.username}
               </span>
             </Link>
+            <Link
+              to="/settings"
+              className="p-2 rounded-full hover:bg-gray-100 transition"
+              title="Cài đặt"
+            >
+              <Settings className="w-5 h-5 text-gray-600" />
+            </Link>
             <button
               onClick={async () => {
                 await logout();
@@ -378,6 +385,12 @@ export default function HomePage() {
               active={pathname.startsWith("/messages")}
             />
             <SidebarItem icon={Bell} label="Notifications" disabled />
+            <SidebarItem
+              icon={Settings}
+              label="Cài đặt"
+              to="/settings"
+              active={pathname === "/settings"}
+            />
           </nav>
         </aside>
 

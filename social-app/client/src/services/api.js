@@ -85,6 +85,9 @@ export const authAPI = {
   logout: (refresh) => api.post("/auth/logout/", { refresh }),
   getMe: () => api.get("/auth/me/"),
   updateMe: (data) => api.patch("/auth/me/", data),
+  changePassword: (data) => api.post("/auth/change-password/", data),
+  changeEmail: (data) => api.post("/auth/change-email/", data),
+  deleteAccount: (data) => api.delete("/auth/delete-account/", { data }),
 };
 
 // ── Profile API helpers ───────────────────────────────────────────────

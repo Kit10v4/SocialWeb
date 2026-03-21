@@ -1,19 +1,17 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, Search, MessageCircle, User } from "lucide-react";
+import { Home, Search, MessageCircle, Settings } from "lucide-react";
 
-import { useAuth } from "../../context/AuthContext";
 import { useUnreadCount } from "../../hooks/useUnreadCount";
 
 export default function BottomNav() {
   const { pathname } = useLocation();
-  const { user } = useAuth();
   const { unreadCount } = useUnreadCount();
 
   const items = [
     { to: "/", icon: Home, label: "Home" },
     { to: "/search", icon: Search, label: "Tìm kiếm" },
     { to: "/messages", icon: MessageCircle, label: "Tin nhắn", badge: unreadCount },
-    { to: `/profile/${user?.username}`, icon: User, label: "Tôi" },
+    { to: "/settings", icon: Settings, label: "Cài đặt" },
   ];
 
   return (

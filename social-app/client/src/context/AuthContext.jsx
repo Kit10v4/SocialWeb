@@ -54,9 +54,22 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
+  const updateTokens = useCallback((tokens) => {
+    if (tokens.access) {
+      localStorage.setItem("access_token", tokens.access);
+    }
+    if (tokens.refresh) {
+      localStorage.setItem("refresh_token", tokens.refresh);
+    }
+  }, []);
+
+  const updateUser = useCallback((updates) => {
+    setUser((prev) => (prev ? { ...prev, ...updates } : prev));
+  }, []);
+
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, isAuthenticated, login, register, logout }}
+      value={{ user, isLoading, isAuthenticated, login, register, logout, updateTokens, updateUser }}
     >
       {children}
     </AuthContext.Provider>

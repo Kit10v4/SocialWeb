@@ -1,3 +1,5 @@
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.db.models import Count, Exists, OuterRef, Q
 from django.utils.decorators import method_decorator
 from rest_framework import generics, status
@@ -14,6 +16,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -95,6 +98,143 @@ class LogoutView(APIView):
             return Response({"detail": "Token is invalid or already blacklisted."},
                             status=status.HTTP_400_BAD_REQUEST)
         return Response({"detail": "Successfully logged out."})
+
+
+class ChangePasswordView(APIView):
+    """POST /api/auth/change-password/ — change user's password."""
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        user = request.user
+        current_password = request.data.get("current_password")
+        new_password = request.data.get("new_password")
+        confirm_password = request.data.get("confirm_password")
+
+        # Validate required fields
+        if not all([current_password, new_password, confirm_password]):
+            return Response(
+                {"detail": "Vui lòng điền đầy đủ các trường."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Verify current password
+        if not user.check_password(current_password):
+            return Response(
+                {"detail": "Mật khẩu hiện tại không đúng."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Check new password match
+        if new_password != confirm_password:
+            return Response(
+                {"detail": "Mật khẩu mới không khớp."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validate new password with Django validators
+        try:
+            validate_password(new_password, user)
+        except ValidationError as e:
+            return Response(
+                {"detail": e.messages[0] if e.messages else "Mật khẩu không hợp lệ."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Set new password
+        user.set_password(new_password)
+        user.save()
+
+        # Blacklist all outstanding refresh tokens
+        outstanding_tokens = OutstandingToken.objects.filter(user=user)
+        for token in outstanding_tokens:
+            try:
+                BlacklistedToken.objects.get_or_create(token=token)
+            except Exception:
+                pass
+
+        # Generate new tokens
+        new_tokens = _get_tokens(user)
+
+        return Response({
+            "detail": "Đổi mật khẩu thành công.",
+            "tokens": new_tokens
+        })
+
+
+class ChangeEmailView(APIView):
+    """POST /api/auth/change-email/ — change user's email."""
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        user = request.user
+        new_email = request.data.get("new_email", "").strip().lower()
+        password = request.data.get("password")
+
+        # Validate required fields
+        if not new_email or not password:
+            return Response(
+                {"detail": "Vui lòng điền đầy đủ các trường."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Verify password
+        if not user.check_password(password):
+            return Response(
+                {"detail": "Mật khẩu không đúng."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Check if email already exists
+        if User.objects.filter(email=new_email).exclude(pk=user.pk).exists():
+            return Response(
+                {"detail": "Email này đã được sử dụng."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Update email
+        user.email = new_email
+        user.save(update_fields=["email"])
+
+        return Response({
+            "detail": "Đã cập nhật email thành công.",
+            "email": new_email
+        })
+
+
+class DeleteAccountView(APIView):
+    """DELETE /api/auth/delete-account/ — permanently delete user account."""
+    permission_classes = (IsAuthenticated,)
+
+    def delete(self, request):
+        user = request.user
+        password = request.data.get("password")
+
+        # Validate required field
+        if not password:
+            return Response(
+                {"detail": "Vui lòng nhập mật khẩu để xác nhận."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Verify password
+        if not user.check_password(password):
+            return Response(
+                {"detail": "Mật khẩu không đúng."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Blacklist all outstanding tokens
+        outstanding_tokens = OutstandingToken.objects.filter(user=user)
+        for token in outstanding_tokens:
+            try:
+                BlacklistedToken.objects.get_or_create(token=token)
+            except Exception:
+                pass
+
+        # Delete user (cascade will handle related data)
+        user.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class MeView(generics.RetrieveUpdateAPIView):
