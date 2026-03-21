@@ -11,9 +11,16 @@ from apps.users.models import User
 email = os.environ.get('ADMIN_EMAIL', '')
 username = os.environ.get('ADMIN_USERNAME', '')
 password = os.environ.get('ADMIN_PASSWORD', '')
-if email and username and password and not User.objects.filter(is_superuser=True).exists():
-    User.objects.create_superuser(email=email, username=username, password=password)
-    print("Superuser created!")
+if email and username and password:
+    user, created = User.objects.get_or_create(
+        email=email,
+        defaults={'username': username}
+    )
+    user.set_password(password)
+    user.is_superuser = True
+    user.is_staff = True
+    user.save()
+    print(f"Admin {'created' if created else 'updated'}: {email}")
 else:
-    print("Skipped superuser creation.")
+    print("Skipped - missing env vars")
 EOF
