@@ -27,3 +27,8 @@ CSRF_TRUSTED_ORIGINS = [
     for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
     if origin
 ]
+if not CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS = [
+        "https://social-app-api-p54k.onrender.com",
+        "https://social-app-api.onrender.com",
+    ]
