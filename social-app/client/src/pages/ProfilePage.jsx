@@ -42,6 +42,20 @@ const TAB_CONFIG = [
   { key: TABS.FRIENDS, label: "Bạn bè", icon: Users },
 ];
 
+function getCoverGradient(username = "") {
+  const palettes = [
+    "from-blue-400 to-indigo-600",
+    "from-violet-400 to-purple-600",
+    "from-emerald-400 to-teal-600",
+    "from-amber-400 to-orange-500",
+    "from-rose-400 to-pink-600",
+    "from-sky-400 to-cyan-600",
+    "from-fuchsia-400 to-pink-500",
+  ];
+  const hash = [...username].reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  return palettes[hash % palettes.length];
+}
+
 // ── ProfilePage ────────────────────────────────────────────────────────────
 export default function ProfilePage() {
   const { username } = useParams();
@@ -343,7 +357,13 @@ export default function ProfilePage() {
         <div className="max-w-4xl mx-auto">
 
           {/* Cover photo */}
-          <div className="relative h-48 sm:h-60 md:h-72 bg-gradient-to-br from-blue-400 to-indigo-600 overflow-hidden">
+          <div
+            className={`relative h-48 sm:h-60 md:h-72 overflow-hidden ${
+              !profile.cover_photo
+                ? `bg-gradient-to-br ${getCoverGradient(profile.username)}`
+                : ""
+            }`}
+          >
             <button
               onClick={() => navigate(-1)}
               className="absolute top-4 left-4 z-10 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm transition"
