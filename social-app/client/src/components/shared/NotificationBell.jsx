@@ -39,6 +39,7 @@ function formatMessage(n) {
 }
 
 const UNREAD_KEY = "notifications_unread_count";
+const GROUP_WINDOW_MS = 10 * 60 * 1000;
 
 function getNotificationLink(n) {
   const type = n.notification_type;
@@ -67,6 +68,114 @@ function getTypeIcon(n) {
     default:
       return { Icon: Bell, className: "text-gray-500 bg-gray-100" };
   }
+}
+
+export function groupNotifications(notifications) {
+  return buildNotificationGroupBundles(notifications).map((bundle) => bundle.group);
+}
+
+function getGroupedActionText(notificationType) {
+  switch (notificationType) {
+    case "like":
+      return "đã thích bài viết của bạn";
+    case "comment":
+      return "đã bình luận về bài viết của bạn";
+    case "friend_request":
+      return "đã gửi lời mời kết bạn";
+    case "friend_accept":
+      return "đã chấp nhận lời mời kết bạn";
+    case "message":
+      return "đã gửi cho bạn một tin nhắn";
+    default:
+      return "đã tương tác với bạn";
+  }
+}
+
+function formatGroupMessage(group, firstItem) {
+  if (!firstItem) return "Thông báo mới";
+  if (group.actors.length <= 1) return formatMessage(firstItem);
+
+  const actor1 = group.actors[0]?.username || "Ai đó";
+  const actor2 = group.actors[1]?.username || "Ai đó";
+  const actionText = getGroupedActionText(group.notification_type);
+
+  if (group.count === 2) {
+    return `${actor1} và ${actor2} ${actionText}`;
+  }
+  return `${actor1}, ${actor2} và ${group.count - 2} người khác ${actionText}`;
+}
+
+function buildNotificationGroupBundles(notifications) {
+  const list = Array.isArray(notifications) ? notifications : [];
+  const byKey = new Map();
+
+  list.forEach((n) => {
+    const key = `${n.notification_type}::${String(n.target_id)}`;
+    if (!byKey.has(key)) byKey.set(key, []);
+    byKey.get(key).push(n);
+  });
+
+  const bundles = [];
+
+  byKey.forEach((items) => {
+    const sorted = [...items].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+    let currentChunk = [];
+
+    sorted.forEach((item) => {
+      if (currentChunk.length === 0) {
+        currentChunk = [item];
+        return;
+      }
+      const anchorTime = new Date(currentChunk[0].created_at).getTime();
+      const itemTime = new Date(item.created_at).getTime();
+      if (Math.abs(anchorTime - itemTime) <= GROUP_WINDOW_MS) {
+        currentChunk.push(item);
+      } else {
+        bundles.push(createBundleFromChunk(currentChunk));
+        currentChunk = [item];
+      }
+    });
+
+    if (currentChunk.length > 0) {
+      bundles.push(createBundleFromChunk(currentChunk));
+    }
+  });
+
+  return bundles.sort(
+    (a, b) => new Date(b.group.latest_at).getTime() - new Date(a.group.latest_at).getTime()
+  );
+}
+
+function createBundleFromChunk(chunk) {
+  const first = chunk[0];
+  const actors = [];
+  const actorIds = new Set();
+
+  chunk.forEach((item) => {
+    const sender = item.sender;
+    const senderId = sender?.id;
+    if (!sender || senderId == null || actorIds.has(senderId) || actors.length >= 3) return;
+    actorIds.add(senderId);
+    actors.push(sender);
+  });
+
+  return {
+    group: {
+      id: first.id,
+      notification_type: first.notification_type,
+      target_id: first.target_id,
+      actors,
+      count: chunk.length,
+      latest_at: first.created_at,
+      is_read: chunk.every((item) => !!item.is_read),
+      text: first.text || "",
+    },
+    first,
+    items: chunk,
+  };
 }
 
 export default function NotificationBell() {
@@ -224,22 +333,29 @@ export default function NotificationBell() {
     } catch {}
   };
 
-  const handleMarkOneRead = async (id, isRead) => {
-    if (isRead) return;
-    try {
-      await notificationsAPI.markOneRead(id);
-      setUnreadCount((c) => Math.max(0, c - 1));
-      queryClient.invalidateQueries({ queryKey: ["notifications", "latest"] });
-    } catch {}
-  };
+  const handleNotificationClick = async (group) => {
+    const groupItems = groupItemsById.get(group.id) || [];
+    const unreadItems = groupItems.filter((item) => !item.is_read);
 
-  const handleNotificationClick = async (n) => {
-    await handleMarkOneRead(n.id, n.is_read);
+    if (unreadItems.length > 0) {
+      try {
+        await Promise.all(unreadItems.map((item) => notificationsAPI.markOneRead(item.id)));
+        setUnreadCount((c) => Math.max(0, c - unreadItems.length));
+        queryClient.invalidateQueries({ queryKey: ["notifications", "latest"] });
+      } catch {}
+    }
+
+    const firstNotification = groupItems[0] || firstNotificationByGroupId.get(group.id);
+    if (!firstNotification) return;
     setOpen(false);
-    navigate(getNotificationLink(n));
+    navigate(getNotificationLink(firstNotification));
   };
 
   const list = notifications || [];
+  const bundles = buildNotificationGroupBundles(list);
+  const groupedList = groupNotifications(list);
+  const firstNotificationByGroupId = new Map(bundles.map((bundle) => [bundle.group.id, bundle.first]));
+  const groupItemsById = new Map(bundles.map((bundle) => [bundle.group.id, bundle.items]));
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -275,33 +391,67 @@ export default function NotificationBell() {
         </div>
 
         <div className="max-h-80 overflow-y-auto divide-y divide-gray-100">
-          {list.length === 0 && (
+          {groupedList.length === 0 && (
             <div className="px-4 py-6 text-xs text-gray-400 text-center">
               Chưa có thông báo.
             </div>
           )}
 
-          {list.map((n) => {
-            const { Icon, className } = getTypeIcon(n);
+          {groupedList.map((group) => {
+            const firstNotification = firstNotificationByGroupId.get(group.id);
+            if (!firstNotification) return null;
+            const { Icon, className } = getTypeIcon(firstNotification);
+            const actors = group.actors || [];
+            const hasMultipleActors = actors.length >= 2;
             return (
               <button
-                key={n.id}
+                key={group.id}
                 type="button"
-                onClick={() => handleNotificationClick(n)}
+                onClick={() => handleNotificationClick(group)}
                 className={`w-full text-left px-4 py-3 text-xs flex gap-2 hover:bg-gray-50 ${
-                  n.is_read ? "bg-white" : "bg-blue-50/60"
+                  group.is_read ? "bg-white" : "bg-blue-50/60"
                 }`}
               >
-                <div className="relative w-8 h-8 flex-shrink-0">
-                  <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center text-[11px] font-semibold text-gray-600">
-                    {n.sender?.avatar ? (
-                      <img
-                        src={n.sender.avatar}
-                        alt={n.sender.username}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span>{n.sender?.username?.[0]?.toUpperCase()}</span>
+                <div className="relative w-10 h-8 flex-shrink-0">
+                  <div className="flex items-center">
+                    {!hasMultipleActors && (
+                      <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center text-[11px] font-semibold text-gray-600">
+                        {actors[0]?.avatar ? (
+                          <img
+                            src={actors[0].avatar}
+                            alt={actors[0].username}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span>{actors[0]?.username?.[0]?.toUpperCase()}</span>
+                        )}
+                      </div>
+                    )}
+                    {hasMultipleActors && (
+                      <>
+                        <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center text-[11px] font-semibold text-gray-600 border border-white">
+                          {actors[0]?.avatar ? (
+                            <img
+                              src={actors[0].avatar}
+                              alt={actors[0].username}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span>{actors[0]?.username?.[0]?.toUpperCase()}</span>
+                          )}
+                        </div>
+                        <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center text-[11px] font-semibold text-gray-600 border border-white ml-[-8px]">
+                          {actors[1]?.avatar ? (
+                            <img
+                              src={actors[1].avatar}
+                              alt={actors[1].username}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span>{actors[1]?.username?.[0]?.toUpperCase()}</span>
+                          )}
+                        </div>
+                      </>
                     )}
                   </div>
                   <span
@@ -311,9 +461,11 @@ export default function NotificationBell() {
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-gray-800 truncate mb-0.5">{formatMessage(n)}</p>
+                  <p className="text-gray-800 truncate mb-0.5">
+                    {formatGroupMessage(group, firstNotification)}
+                  </p>
                   <p className="text-[10px] text-gray-400">
-                    {new Date(n.created_at).toLocaleString("vi-VN", {
+                    {new Date(group.latest_at).toLocaleString("vi-VN", {
                       hour: "2-digit",
                       minute: "2-digit",
                       day: "2-digit",
@@ -321,7 +473,7 @@ export default function NotificationBell() {
                     })}
                   </p>
                 </div>
-                {!n.is_read && (
+                {!group.is_read && (
                   <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-2" />
                 )}
               </button>

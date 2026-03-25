@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Heart, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { commentAPI, postAPI } from "../services/api";
 import { useToast } from "./shared/Toast";
@@ -533,7 +533,7 @@ export default function PostCard({
             <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
               <div className="flex items-center gap-1">
                 <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500 text-white text-[10px]">
-                  ❤
+                  <Heart className="w-3 h-3 fill-current" />
                 </span>
                 <span>{likeSummary || `${localLikeCount} lượt thích`}</span>
               </div>
@@ -553,23 +553,21 @@ export default function PostCard({
           <div className="border-t border-gray-100 my-2" />
 
           {/* Actions */}
-          <div className="flex items-center justify-between text-sm text-gray-600">
+          <div className="flex items-center text-sm text-gray-600">
             <button
               type="button"
               onClick={handleLike}
               disabled={likeBusy}
-              className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg hover:bg-gray-50 active:scale-95 transition ${
-                localLiked ? "text-blue-600 font-semibold" : ""
+              className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg active:scale-95 transition ${
+                localLiked ? "bg-blue-50 text-blue-600 font-semibold" : "hover:bg-gray-50"
               }`}
             >
-              <span
-                className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${
-                  localLiked ? "bg-blue-50 text-blue-600" : "bg-gray-100 text-gray-600"
-                } ${likeBusy ? "animate-bounce" : ""}`}
-              >
-                ❤
-              </span>
-              <span>Thích</span>
+              {localLiked ? (
+                <Heart className={`w-5 h-5 fill-current ${likeBusy ? "animate-bounce" : ""}`} />
+              ) : (
+                <Heart className={`w-5 h-5 ${likeBusy ? "animate-bounce" : ""}`} />
+              )}
+              <span>Thích{localLikeCount > 0 ? ` · ${localLikeCount}` : ""}</span>
             </button>
 
             <button
@@ -593,7 +591,7 @@ export default function PostCard({
                   d="M7.5 8.25h9m-9 3h5.25M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <span>Bình luận</span>
+              <span>Bình luận{localCommentCount > 0 ? ` · ${localCommentCount}` : ""}</span>
             </button>
 
             <button
@@ -621,8 +619,8 @@ export default function PostCard({
             <button
               type="button"
               onClick={handleBookmark}
-              className={`flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-50 active:scale-95 transition ${
-                localSaved ? "text-yellow-500" : "text-gray-500"
+              className={`ml-auto flex items-center justify-center w-9 h-9 rounded-lg active:scale-95 transition ${
+                localSaved ? "bg-yellow-50 text-yellow-500" : "text-gray-500 hover:bg-gray-50"
               }`}
             >
               <svg

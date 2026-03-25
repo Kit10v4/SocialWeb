@@ -33,9 +33,12 @@ export default function HomePage() {
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [composerText, setComposerText] = useState("");
+  const [pendingImages, setPendingImages] = useState([]);
   const [newPostsCount, setNewPostsCount] = useState(0);
   const [isPullRefreshing, setIsPullRefreshing] = useState(false);
   const loadMoreRef = useRef(null);
+  const photoInputRef = useRef(null);
   const touchStartYRef = useRef(0);
   const lastNotifiedLatestIdRef = useRef(null);
 
@@ -221,6 +224,23 @@ export default function HomePage() {
     });
   };
 
+  const closeCreateModal = () => {
+    setIsCreateOpen(false);
+    setPendingImages([]);
+  };
+
+  const handlePhotoChipClick = () => {
+    photoInputRef.current?.click();
+  };
+
+  const handlePhotoFilesChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setPendingImages(files);
+    setIsCreateOpen(true);
+    e.target.value = "";
+  };
+
   // ── Create post handler ──────────────────────────────────────────────
   const handleCreatePost = async ({ content, images, privacy }) => {
     const formData = new FormData();
@@ -232,7 +252,8 @@ export default function HomePage() {
 
     try {
       await postAPI.create(formData);
-      setIsCreateOpen(false);
+      closeCreateModal();
+      setComposerText("");
       await queryClient.invalidateQueries({ queryKey: ["feed"] });
 
       // Scroll to top to show new post
@@ -418,12 +439,56 @@ export default function HomePage() {
                   </span>
                 )}
               </div>
+              <input
+                type="text"
+                value={composerText}
+                onChange={(e) => setComposerText(e.target.value)}
+                placeholder="Bạn đang nghĩ gì?"
+                className="flex-1 text-left text-xs sm:text-sm text-gray-700 placeholder:text-gray-500 bg-gray-100 rounded-full px-2 sm:px-3 py-1.5 sm:py-2 outline-none focus:ring-2 focus:ring-blue-200 transition"
+              />
               <button
                 type="button"
                 onClick={() => setIsCreateOpen(true)}
-                className="flex-1 text-left text-xs sm:text-sm text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-full px-2 sm:px-3 py-1.5 sm:py-2 transition"
+                disabled={!composerText.trim() && pendingImages.length === 0}
+                className="px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Bạn đang nghĩ gì?
+                Đăng
+              </button>
+            </div>
+
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handlePhotoFilesChange}
+            />
+
+            <div className="flex items-center gap-2 mt-3 overflow-x-auto">
+              <button
+                type="button"
+                onClick={handlePhotoChipClick}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm text-gray-600 hover:bg-gray-100 transition cursor-pointer whitespace-nowrap"
+              >
+                <span>📷</span>
+                <span>Ảnh</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsCreateOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm text-gray-600 hover:bg-gray-100 transition cursor-pointer whitespace-nowrap"
+              >
+                <span>😊</span>
+                <span>Cảm xúc</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsCreateOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm text-gray-600 hover:bg-gray-100 transition cursor-pointer whitespace-nowrap"
+              >
+                <span>📍</span>
+                <span>Check-in</span>
               </button>
             </div>
           </div>
@@ -625,9 +690,10 @@ export default function HomePage() {
       {isCreateOpen && (
         <CreatePostModal
           isOpen={isCreateOpen}
-          onClose={() => setIsCreateOpen(false)}
+          onClose={closeCreateModal}
           onSubmit={handleCreatePost}
           isSubmitting={isCreating}
+          initialImages={pendingImages}
         />
       )}
 

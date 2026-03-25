@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from "react";
  *  - onSubmit: ({ content, images, privacy }) => Promise<void> | void
  *  - isSubmitting?: boolean
  *  - maxLength?: number
+ *  - initialImages?: File[]
  */
 export default function CreatePostModal({
   isOpen,
@@ -17,6 +18,7 @@ export default function CreatePostModal({
   onSubmit,
   isSubmitting = false,
   maxLength = 1000,
+  initialImages = [],
 }) {
   const [content, setContent] = useState("");
   const [privacy, setPrivacy] = useState("Public");
@@ -35,6 +37,19 @@ export default function CreatePostModal({
       setError("");
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!Array.isArray(initialImages) || initialImages.length === 0) return;
+
+    const newPreviews = initialImages.map((file) => URL.createObjectURL(file));
+    setImages(initialImages);
+    setPreviews((prev) => {
+      prev.forEach((url) => URL.revokeObjectURL(url));
+      return newPreviews;
+    });
+    setError("");
+  }, [initialImages, isOpen]);
 
   useEffect(() => {
     // Auto-resize textarea

@@ -658,7 +658,7 @@ function ActionButtons({
   const [showReportModal, setShowReportModal] = useState(false);
   const menuRef = useRef(null);
   const base =
-    "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition";
+    "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition w-full sm:w-auto justify-center";
   const primary = `${base} bg-blue-600 hover:bg-blue-700 text-white shadow-sm`;
   const secondary = `${base} bg-gray-100 hover:bg-gray-200 text-gray-800`;
   const messageButton = `${base} bg-blue-600 hover:bg-blue-700 text-white shadow-sm`;
@@ -683,7 +683,7 @@ function ActionButtons({
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       {/* None → Kết bạn */}
       {status === "none" && (
         <button onClick={onSendRequest} disabled={loading} className={primary}>
@@ -736,69 +736,113 @@ function ActionButtons({
             )}
             Nhắn tin
           </button>
-          <div className="relative" ref={dropdownRef}>
-            <button onClick={onToggleDropdown} className={secondary}>
-              <UserCheck className="h-4 w-4 text-green-600" />
-              Bạn bè
-              <ChevronDown
-                className={`h-4 w-4 transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
-              />
-            </button>
-            {dropdownOpen && (
-              <div className="absolute right-0 top-full mt-1.5 bg-white shadow-xl rounded-xl py-1 min-w-[160px] border border-gray-100 z-20">
-                <button
-                  onClick={onUnfriend}
-                  className="w-full flex items-center gap-2 text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition rounded-lg mx-auto"
-                >
-                  <UserMinus className="h-4 w-4" />
-                  Huỷ kết bạn
-                </button>
-              </div>
-            )}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:flex-none" ref={dropdownRef}>
+              <button onClick={onToggleDropdown} className={secondary}>
+                <UserCheck className="h-4 w-4 text-green-600" />
+                Bạn bè
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
+                />
+              </button>
+              {dropdownOpen && (
+                <div className="absolute right-0 top-full mt-1.5 bg-white shadow-xl rounded-xl py-1 min-w-[160px] border border-gray-100 z-20">
+                  <button
+                    onClick={onUnfriend}
+                    className="w-full flex items-center gap-2 text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition rounded-lg mx-auto"
+                  >
+                    <UserMinus className="h-4 w-4" />
+                    Huỷ kết bạn
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="relative flex-1 sm:flex-none" ref={menuRef}>
+              <button
+                onClick={() => setShowMenu((v) => !v)}
+                className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 w-full sm:w-auto justify-center flex items-center"
+                type="button"
+              >
+                <MoreHorizontal className="w-5 h-5" />
+              </button>
+              {showMenu && (
+                <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-gray-100 py-1 min-w-[180px] z-20">
+                  <button
+                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2"
+                    onClick={() => {
+                      setShowMenu(false);
+                      onCopyProfileLink?.();
+                    }}
+                  >
+                    <Link2 className="w-4 h-4" /> Sao chép liên kết profile
+                  </button>
+                  <button
+                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2 text-amber-600"
+                    onClick={() => {
+                      setShowMenu(false);
+                      setShowReportModal(true);
+                    }}
+                  >
+                    <Flag className="w-4 h-4" /> Báo cáo người dùng
+                  </button>
+                  <button
+                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2 text-red-600"
+                    onClick={() => {
+                      setShowMenu(false);
+                      onBlockUser?.();
+                    }}
+                  >
+                    <Ban className="w-4 h-4" /> Chặn người dùng
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </>
       )}
 
-      <div className="relative" ref={menuRef}>
-        <button
-          onClick={() => setShowMenu((v) => !v)}
-          className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200"
-          type="button"
-        >
-          <MoreHorizontal className="w-5 h-5" />
-        </button>
-        {showMenu && (
-          <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-gray-100 py-1 min-w-[180px] z-20">
-            <button
-              className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2"
-              onClick={() => {
-                setShowMenu(false);
-                onCopyProfileLink?.();
-              }}
-            >
-              <Link2 className="w-4 h-4" /> Sao chép liên kết profile
-            </button>
-            <button
-              className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2 text-amber-600"
-              onClick={() => {
-                setShowMenu(false);
-                setShowReportModal(true);
-              }}
-            >
-              <Flag className="w-4 h-4" /> Báo cáo người dùng
-            </button>
-            <button
-              className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2 text-red-600"
-              onClick={() => {
-                setShowMenu(false);
-                onBlockUser?.();
-              }}
-            >
-              <Ban className="w-4 h-4" /> Chặn người dùng
-            </button>
-          </div>
-        )}
-      </div>
+      {status !== "accepted" && (
+        <div className="relative w-full sm:w-auto" ref={menuRef}>
+          <button
+            onClick={() => setShowMenu((v) => !v)}
+            className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 w-full sm:w-auto justify-center flex items-center"
+            type="button"
+          >
+            <MoreHorizontal className="w-5 h-5" />
+          </button>
+          {showMenu && (
+            <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-gray-100 py-1 min-w-[180px] z-20">
+              <button
+                className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2"
+                onClick={() => {
+                  setShowMenu(false);
+                  onCopyProfileLink?.();
+                }}
+              >
+                <Link2 className="w-4 h-4" /> Sao chép liên kết profile
+              </button>
+              <button
+                className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2 text-amber-600"
+                onClick={() => {
+                  setShowMenu(false);
+                  setShowReportModal(true);
+                }}
+              >
+                <Flag className="w-4 h-4" /> Báo cáo người dùng
+              </button>
+              <button
+                className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2 text-red-600"
+                onClick={() => {
+                  setShowMenu(false);
+                  onBlockUser?.();
+                }}
+              >
+                <Ban className="w-4 h-4" /> Chặn người dùng
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {showReportModal && (
         <ReportModal
