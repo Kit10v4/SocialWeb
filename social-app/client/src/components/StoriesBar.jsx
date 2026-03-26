@@ -67,6 +67,7 @@ export default function StoriesBar() {
                   <img
                     src={friend.avatar}
                     alt={username}
+                    loading="lazy"
                     className="w-full h-full object-cover"
                   />
                 ) : (

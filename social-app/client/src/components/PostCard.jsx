@@ -428,6 +428,7 @@ export default function PostCard({
           <img
             src={post.author?.avatar}
             alt={post.author?.username}
+            loading="lazy"
             className="w-10 h-10 rounded-full object-cover bg-gray-200 dark:bg-gray-700"
           />
           <div className="min-w-0">
@@ -693,6 +694,7 @@ function ImageGrid({ images, onOpen }) {
         <img
           src={images[0]}
           alt="post"
+          loading="lazy"
           className="w-full h-full object-cover"
         />
       </div>
@@ -712,6 +714,7 @@ function ImageGrid({ images, onOpen }) {
             <img
               src={src}
               alt={`post-${idx}`}
+              loading="lazy"
               className="w-full h-full object-cover"
             />
           </button>
@@ -731,6 +734,7 @@ function ImageGrid({ images, onOpen }) {
           <img
             src={images[0]}
             alt="post-0"
+            loading="lazy"
             className="w-full h-full object-cover"
           />
         </button>
@@ -768,6 +772,7 @@ function ImageGrid({ images, onOpen }) {
             <img
               src={src}
               alt={`post-${idx}`}
+              loading="lazy"
               className="w-full h-full object-cover"
             />
             {isLast && (

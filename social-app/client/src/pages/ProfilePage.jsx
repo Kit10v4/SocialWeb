@@ -375,6 +375,7 @@ export default function ProfilePage() {
               <img
                 src={profile.cover_photo}
                 alt="Cover"
+                loading="lazy"
                 className="w-full h-full object-cover"
               />
             )}
@@ -399,6 +400,7 @@ export default function ProfilePage() {
                     <img
                       src={profile.avatar}
                       alt={profile.username}
+                      loading="lazy"
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -540,6 +542,7 @@ export default function ProfilePage() {
                     <img
                       src={photo.url}
                       alt={`Ảnh ${idx + 1}`}
+                      loading="lazy"
                       className="w-full h-full object-cover"
                     />
                   </button>

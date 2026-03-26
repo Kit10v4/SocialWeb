@@ -331,6 +331,7 @@ export default function HomePage() {
               <img
                 src={user?.avatar || "https://i.pravatar.cc/100?img=67"}
                 alt={user?.username || "user"}
+                loading="lazy"
                 className="w-8 h-8 rounded-full object-cover"
               />
               <span className="hidden sm:inline text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -369,6 +370,7 @@ export default function HomePage() {
                   <img
                     src={user.avatar}
                     alt={user.username}
+                    loading="lazy"
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -431,6 +433,7 @@ export default function HomePage() {
                   <img
                     src={user.avatar}
                     alt={user.username}
+                    loading="lazy"
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -613,6 +616,7 @@ export default function HomePage() {
                         <img
                           src={f.avatar}
                           alt={f.username}
+                          loading="lazy"
                           className="w-full h-full object-cover"
                         />
                       ) : (
