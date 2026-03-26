@@ -418,7 +418,7 @@ export default function PostCard({
     typeof post?.content === "string" ? localContent : post?.content || localContent;
 
   return (
-    <article className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5 mb-4">
+    <article className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-5 mb-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <Link
@@ -428,7 +428,7 @@ export default function PostCard({
           <img
             src={post.author?.avatar}
             alt={post.author?.username}
-            className="w-10 h-10 rounded-full object-cover bg-gray-200"
+            className="w-10 h-10 rounded-full object-cover bg-gray-200 dark:bg-gray-700"
           />
           <div className="min-w-0">
             <div className="flex items-center gap-1">
@@ -436,7 +436,7 @@ export default function PostCard({
                 {post.author?.username}
               </p>
             </div>
-            <div className="flex items-center gap-1 text-xs text-gray-500">
+            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
               <button
                 type="button"
                 onClick={(e) => {
@@ -461,19 +461,19 @@ export default function PostCard({
             <button
               type="button"
               onClick={() => setMenuOpen((v) => !v)}
-              className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500"
+              className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400"
             >
               <MoreHorizontal className="w-5 h-5" />
             </button>
             {menuOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-lg z-10 overflow-hidden">
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-xl shadow-lg z-10 overflow-hidden">
                 <button
                   type="button"
                   onClick={() => {
                     setEditOpen(true);
                     setMenuOpen(false);
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                 >
                   <Pencil className="w-4 h-4" />
                   Chỉnh sửa bài viết
@@ -508,7 +508,7 @@ export default function PostCard({
             <button
               type="button"
               onClick={() => setShowContentFull(true)}
-              className="mt-1 text-sm font-medium text-gray-600 hover:text-gray-800"
+              className="mt-1 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
             >
               Xem thêm
             </button>
@@ -530,7 +530,7 @@ export default function PostCard({
         <>
           {/* Like summary */}
           {(localLikeCount > 0 || likeSummary) && (
-            <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+            <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-2">
               <div className="flex items-center gap-1">
                 <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-500 text-white text-[10px]">
                   <Heart className="w-3 h-3 fill-current" />
@@ -550,16 +550,16 @@ export default function PostCard({
           )}
 
           {/* Divider */}
-          <div className="border-t border-gray-100 my-2" />
+          <div className="border-t border-gray-100 dark:border-gray-700 my-2" />
 
           {/* Actions */}
-          <div className="flex items-center text-sm text-gray-600">
+          <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
             <button
               type="button"
               onClick={handleLike}
               disabled={likeBusy}
               className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg active:scale-95 transition ${
-                localLiked ? "bg-blue-50 text-blue-600 font-semibold" : "hover:bg-gray-50"
+                localLiked ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-semibold" : "hover:bg-gray-50 dark:hover:bg-gray-800"
               }`}
             >
               {localLiked ? (
@@ -573,8 +573,8 @@ export default function PostCard({
             <button
               type="button"
               onClick={handleCommentClick}
-              className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg hover:bg-gray-50 active:scale-95 transition ${
-                showComments ? "text-blue-600 font-semibold" : ""
+              className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-95 transition ${
+                showComments ? "text-blue-600 dark:text-blue-400 font-semibold" : ""
               }`}
             >
               <svg
@@ -597,7 +597,7 @@ export default function PostCard({
             <button
               type="button"
               onClick={handleShare}
-              className="flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg hover:bg-gray-50 active:scale-95 transition"
+              className="flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-95 transition"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -620,7 +620,7 @@ export default function PostCard({
               type="button"
               onClick={handleBookmark}
               className={`ml-auto flex items-center justify-center w-9 h-9 rounded-lg active:scale-95 transition ${
-                localSaved ? "bg-yellow-50 text-yellow-500" : "text-gray-500 hover:bg-gray-50"
+                localSaved ? "bg-yellow-50 dark:bg-yellow-900/30 text-yellow-500 dark:text-yellow-400" : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
               }`}
             >
               <svg
@@ -784,18 +784,18 @@ function ImageGrid({ images, onOpen }) {
 
 export function PostCardSkeleton() {
   return (
-    <article className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5 mb-4 animate-pulse space-y-3">
+    <article className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 sm:p-5 mb-4 animate-pulse space-y-3">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-gray-200" />
+        <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700" />
         <div className="space-y-2 flex-1">
-          <div className="h-3 w-32 bg-gray-200 rounded" />
-          <div className="h-3 w-20 bg-gray-100 rounded" />
+          <div className="h-3 w-32 bg-gray-200 dark:bg-gray-700 rounded" />
+          <div className="h-3 w-20 bg-gray-100 dark:bg-gray-800 rounded" />
         </div>
       </div>
-      <div className="h-4 bg-gray-100 rounded" />
-      <div className="h-4 bg-gray-100 w-5/6 rounded" />
-      <div className="h-52 bg-gray-100 rounded-xl" />
-      <div className="h-8 bg-gray-100 rounded" />
+      <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded" />
+      <div className="h-4 bg-gray-100 dark:bg-gray-800 w-5/6 rounded" />
+      <div className="h-52 bg-gray-100 dark:bg-gray-800 rounded-xl" />
+      <div className="h-8 bg-gray-100 dark:bg-gray-800 rounded" />
     </article>
   );
 }

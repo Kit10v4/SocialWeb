@@ -295,9 +295,9 @@ export default function HomePage() {
   const atEnd = !hasNextPage && posts.length > 0;
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-20 md:pb-0">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-950 pb-20 md:pb-0">
       {/* Navbar */}
-      <nav className="bg-white shadow-sm sticky top-0 z-50">
+      <nav className="bg-white dark:bg-gray-900 shadow-sm sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 h-12 sm:h-14 flex items-center justify-between">
           <span className="text-lg sm:text-xl font-bold text-blue-600 min-w-[60px]">
             {pathname === "/" ? (
@@ -310,13 +310,13 @@ export default function HomePage() {
             )}
           </span>
           {pathname !== "/" && (
-            <span className="sm:hidden absolute left-1/2 -translate-x-1/2 text-sm font-semibold text-gray-800">
+            <span className="sm:hidden absolute left-1/2 -translate-x-1/2 text-sm font-semibold text-gray-800 dark:text-gray-100">
               {pageTitle}
             </span>
           )}
           <div className="flex items-center gap-3">
             <NotificationBell />
-            <Link to="/messages" className="relative p-2 rounded-full hover:bg-gray-100">
+            <Link to="/messages" className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
               <MessageCircle className="w-5 h-5" />
               {unreadCount > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-semibold flex items-center justify-center">
@@ -333,16 +333,16 @@ export default function HomePage() {
                 alt={user?.username || "user"}
                 className="w-8 h-8 rounded-full object-cover"
               />
-              <span className="hidden sm:inline text-sm font-medium text-gray-700">
+              <span className="hidden sm:inline text-sm font-medium text-gray-700 dark:text-gray-300">
                 {user?.username}
               </span>
             </Link>
             <Link
               to="/settings"
-              className="p-2 rounded-full hover:bg-gray-100 transition"
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition"
               title="Cài đặt"
             >
-              <Settings className="w-5 h-5 text-gray-600" />
+              <Settings className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </Link>
             <button
               onClick={async () => {
@@ -362,9 +362,9 @@ export default function HomePage() {
       <main className="max-w-6xl mx-auto px-0 sm:px-4 lg:px-6 py-4 flex flex-col md:flex-row gap-4">
         {/* Left column – user card + nav (hidden on mobile) */}
         <aside className="hidden md:block md:w-1/3 lg:w-1/4">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden flex items-center justify-center">
                 {user?.avatar ? (
                   <img
                     src={user.avatar}
@@ -372,21 +372,21 @@ export default function HomePage() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <span className="text-sm font-semibold text-gray-600">
+                  <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">
                     {user?.username?.[0]?.toUpperCase()}
                   </span>
                 )}
               </div>
               <div>
-                <p className="text-sm font-semibold text-gray-900">
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                   {user?.username}
                 </p>
-                <p className="text-xs text-gray-400">Chào mừng trở lại</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">Chào mừng trở lại</p>
               </div>
             </div>
           </div>
 
-          <nav className="bg-white rounded-2xl shadow-sm border border-gray-100 py-2">
+          <nav className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 py-2">
             <SidebarItem
               icon={Home}
               label="Home"
@@ -424,9 +424,9 @@ export default function HomePage() {
            <StoriesBar />
 
           {/* Create post card */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 sm:p-4 mb-3">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-2 sm:p-4 mb-3">
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden flex items-center justify-center">
                 {user?.avatar ? (
                   <img
                     src={user.avatar}
@@ -434,7 +434,7 @@ export default function HomePage() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <span className="text-[11px] sm:text-xs font-semibold text-gray-600">
+                  <span className="text-[11px] sm:text-xs font-semibold text-gray-600 dark:text-gray-400">
                     {user?.username?.[0]?.toUpperCase()}
                   </span>
                 )}
@@ -444,7 +444,7 @@ export default function HomePage() {
                 value={composerText}
                 onChange={(e) => setComposerText(e.target.value)}
                 placeholder="Bạn đang nghĩ gì?"
-                className="flex-1 text-left text-xs sm:text-sm text-gray-700 placeholder:text-gray-500 bg-gray-100 rounded-full px-2 sm:px-3 py-1.5 sm:py-2 outline-none focus:ring-2 focus:ring-blue-200 transition"
+                className="flex-1 text-left text-xs sm:text-sm text-gray-700 dark:text-gray-300 placeholder:text-gray-500 dark:placeholder:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-full px-2 sm:px-3 py-1.5 sm:py-2 outline-none focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 transition"
               />
               <button
                 type="button"
@@ -469,7 +469,7 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={handlePhotoChipClick}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm text-gray-600 hover:bg-gray-100 transition cursor-pointer whitespace-nowrap"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer whitespace-nowrap"
               >
                 <span>📷</span>
                 <span>Ảnh</span>
@@ -477,7 +477,7 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => setIsCreateOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm text-gray-600 hover:bg-gray-100 transition cursor-pointer whitespace-nowrap"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer whitespace-nowrap"
               >
                 <span>😊</span>
                 <span>Cảm xúc</span>
@@ -485,7 +485,7 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => setIsCreateOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm text-gray-600 hover:bg-gray-100 transition cursor-pointer whitespace-nowrap"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition cursor-pointer whitespace-nowrap"
               >
                 <span>📍</span>
                 <span>Check-in</span>
@@ -520,7 +520,7 @@ export default function HomePage() {
           )}
 
           {isError && !isLoading && (
-            <div className="bg-white rounded-2xl border border-red-100 text-red-600 text-sm p-4 mb-3">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-red-100 dark:border-red-900 text-red-600 dark:text-red-400 text-sm p-4 mb-3">
               <p className="font-medium mb-1">Không thể tải news feed.</p>
               <p className="text-xs mb-2">{error?.message || "Vui lòng thử lại sau."}</p>
               <button
@@ -534,7 +534,7 @@ export default function HomePage() {
           )}
 
           {!isLoading && !isError && posts.length === 0 && (
-            <div className="bg-white rounded-2xl border border-gray-100 text-center text-sm text-gray-400 p-6 space-y-3">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-700 text-center text-sm text-gray-400 dark:text-gray-500 p-6 space-y-3">
               <p>Kết bạn để xem bài viết của bạn bè</p>
               <Link
                 to="/search"
@@ -564,7 +564,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => fetchNextPage()}
-              className="w-full py-2 text-sm text-blue-600 font-medium border border-blue-200 rounded-xl hover:bg-blue-50"
+              className="w-full py-2 text-sm text-blue-600 dark:text-blue-400 font-medium border border-blue-200 dark:border-blue-800 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/30"
             >
               Tải thêm bài viết
             </button>
@@ -579,7 +579,7 @@ export default function HomePage() {
           )}
 
           {atEnd && (
-            <p className="mt-4 text-center text-xs text-gray-400">
+            <p className="mt-4 text-center text-xs text-gray-400 dark:text-gray-500">
               Đã xem hết bài viết.
             </p>
           )}
@@ -588,15 +588,15 @@ export default function HomePage() {
         {/* Right column – suggestions + trending (desktop only) */}
         <aside className="hidden lg:block lg:w-1/4 space-y-4">
           {/* Friend suggestions */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-3">
-            <p className="text-sm font-semibold text-gray-800 mb-2">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-3">
+            <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-2">
               Gợi ý kết bạn
             </p>
             {suggestionsLoading && (
               <div className="space-y-2 animate-pulse">
-                <div className="h-6 bg-gray-100 rounded" />
-                <div className="h-6 bg-gray-100 rounded" />
-                <div className="h-6 bg-gray-100 rounded" />
+                <div className="h-6 bg-gray-100 dark:bg-gray-800 rounded" />
+                <div className="h-6 bg-gray-100 dark:bg-gray-800 rounded" />
+                <div className="h-6 bg-gray-100 dark:bg-gray-800 rounded" />
               </div>
             )}
             {suggestionsError && !suggestionsLoading && (
@@ -608,7 +608,7 @@ export default function HomePage() {
               <ul className="space-y-2">
                 {(suggestions || []).slice(0, 5).map((f) => (
                   <li key={f.id} className="flex items-center gap-2 text-xs">
-                    <div className="w-7 h-7 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
+                    <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden flex items-center justify-center">
                       {f.avatar ? (
                         <img
                           src={f.avatar}
@@ -616,41 +616,41 @@ export default function HomePage() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <span className="text-[10px] font-semibold text-gray-600">
+                        <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-400">
                           {f.username?.[0]?.toUpperCase()}
                         </span>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-800 truncate">
+                      <p className="font-medium text-gray-800 dark:text-gray-100 truncate">
                         {f.username}
                       </p>
                     </div>
                     <Link
                       to={`/profile/${f.username}`}
-                      className="text-[11px] text-blue-600 hover:underline"
+                      className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline"
                     >
                       Xem
                     </Link>
                   </li>
                 ))}
                 {(suggestions || []).length === 0 && (
-                  <li className="text-xs text-gray-400">Không có gợi ý.</li>
+                  <li className="text-xs text-gray-400 dark:text-gray-500">Không có gợi ý.</li>
                 )}
               </ul>
             )}
           </div>
 
           {/* Trending posts */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-3">
-            <p className="text-sm font-semibold text-gray-800 mb-2">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-3">
+            <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-2">
               Bài viết nổi bật
             </p>
             {trendingLoading && (
               <div className="space-y-2 animate-pulse">
-                <div className="h-6 bg-gray-100 rounded" />
-                <div className="h-6 bg-gray-100 rounded" />
-                <div className="h-6 bg-gray-100 rounded" />
+                <div className="h-6 bg-gray-100 dark:bg-gray-800 rounded" />
+                <div className="h-6 bg-gray-100 dark:bg-gray-800 rounded" />
+                <div className="h-6 bg-gray-100 dark:bg-gray-800 rounded" />
               </div>
             )}
             {trendingError && !trendingLoading && (
@@ -662,21 +662,21 @@ export default function HomePage() {
               <ul className="space-y-2 text-xs">
                 {(trending || []).slice(0, 5).map((p) => (
                   <li key={p.id} className="flex flex-col">
-                    <p className="font-medium text-gray-800 truncate">
+                    <p className="font-medium text-gray-800 dark:text-gray-100 truncate">
                       {p.author?.username}
                     </p>
                     {p.content && (
-                      <p className="text-gray-500 truncate max-w-[220px]">
+                      <p className="text-gray-500 dark:text-gray-400 truncate max-w-[220px]">
                         {p.content}
                       </p>
                     )}
-                    <p className="text-[11px] text-gray-400">
+                    <p className="text-[11px] text-gray-400 dark:text-gray-500">
                       {p.like_count ?? 0} lượt thích · {p.comment_count ?? 0} bình luận
                     </p>
                   </li>
                 ))}
                 {(trending || []).length === 0 && (
-                  <li className="text-xs text-gray-400">Chưa có dữ liệu.</li>
+                  <li className="text-xs text-gray-400 dark:text-gray-500">Chưa có dữ liệu.</li>
                 )}
               </ul>
             )}
@@ -714,8 +714,8 @@ function SidebarItem({ icon: Icon, label, to, active, disabled }) {
     <div
       className={`flex items-center gap-3 px-4 py-2.5 text-sm cursor-pointer transition-colors ${
         resolvedActive
-          ? "bg-blue-50 text-blue-600 font-semibold"
-          : "text-gray-700 hover:bg-gray-50"
+          ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-semibold"
+          : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
       } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
     >
       <Icon className="w-4 h-4" />

@@ -124,11 +124,11 @@ export default function ChatBox({ conversation }) {
   );
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="flex flex-col h-full bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-gray-700">
         <div className="relative">
-          <div className="w-9 h-9 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center text-xs font-semibold text-gray-600">
+          <div className="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden flex items-center justify-center text-xs font-semibold text-gray-600 dark:text-gray-400">
             {otherParticipants[0]?.avatar ? (
               <img
                 src={otherParticipants[0].avatar}
@@ -148,11 +148,11 @@ export default function ChatBox({ conversation }) {
         <div className="flex-1 min-w-0">
           <Link
             to={`/profile/${otherParticipants[0]?.username}`}
-            className="text-sm font-semibold text-gray-900 truncate hover:underline cursor-pointer block"
+            className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate hover:underline cursor-pointer block"
           >
             {title}
           </Link>
-          <p className="text-[11px] text-gray-400">
+          <p className="text-[11px] text-gray-400 dark:text-gray-500">
             {!isConnected
               ? "Đang kết nối..."
               : isOtherOnline
@@ -163,9 +163,9 @@ export default function ChatBox({ conversation }) {
       </div>
 
       {/* Messages */}
-      <div ref={listRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-2 bg-gray-50">
+      <div ref={listRef} className="flex-1 overflow-y-auto px-3 py-3 space-y-2 bg-gray-50 dark:bg-gray-800">
         {isLoading && (
-          <div className="flex justify-center py-6 text-gray-400 text-sm">
+          <div className="flex justify-center py-6 text-gray-400 dark:text-gray-500 text-sm">
             <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Đang tải lịch sử chat...
           </div>
         )}
@@ -177,7 +177,7 @@ export default function ChatBox({ conversation }) {
         )}
 
         {!isLoading && !error && groupedMessages.length === 0 && (
-          <div className="flex justify-center py-6 text-xs text-gray-400">
+          <div className="flex justify-center py-6 text-xs text-gray-400 dark:text-gray-500">
             Hãy gửi tin nhắn đầu tiên.
           </div>
         )}
@@ -188,7 +188,7 @@ export default function ChatBox({ conversation }) {
           ))}
 
         {typingUsers.length > 0 && (
-          <div className="flex items-center gap-2 text-[11px] text-gray-500 px-2">
+          <div className="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400 px-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span>
               {typingUsers.map((u) => u.username).join(", ")} đang gõ...
@@ -198,7 +198,7 @@ export default function ChatBox({ conversation }) {
       </div>
 
       {/* Input */}
-      <div className="border-t border-gray-100 p-3">
+      <div className="border-t border-gray-100 dark:border-gray-700 p-3">
         <div className="flex items-end gap-2">
           <div className="relative flex-1">
             <textarea
@@ -207,23 +207,23 @@ export default function ChatBox({ conversation }) {
               onKeyDown={handleKeyDown}
               rows={1}
               placeholder="Nhập tin nhắn..."
-              className="w-full max-h-32 text-sm rounded-2xl border border-gray-200 px-3 py-2 bg-white outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-y-auto"
+              className="w-full max-h-32 text-sm rounded-2xl border border-gray-200 dark:border-gray-600 px-3 py-2 bg-white dark:bg-gray-800 dark:text-gray-100 outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600 resize-none overflow-y-auto"
             />
             <button
               type="button"
               onClick={() => setShowEmoji((v) => !v)}
-              className="absolute right-2 bottom-1.5 text-gray-400 hover:text-gray-600"
+              className="absolute right-2 bottom-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
             >
               <Smile className="w-4 h-4" />
             </button>
 
             {showEmoji && (
-              <div className="absolute bottom-9 right-0 bg-white border border-gray-200 rounded-xl shadow-lg p-2 flex flex-wrap gap-1 w-44 z-10">
+              <div className="absolute bottom-9 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-lg p-2 flex flex-wrap gap-1 w-44 z-10">
                 {EMOJIS.map((emoji) => (
                   <button
                     key={emoji}
                     type="button"
-                    className="text-xl hover:bg-gray-100 rounded"
+                    className="text-xl hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                     onClick={() => handleEmojiClick(emoji)}
                   >
                     {emoji}
@@ -242,7 +242,7 @@ export default function ChatBox({ conversation }) {
             Gửi
           </button>
         </div>
-        <p className="mt-1 text-[10px] text-gray-400">
+        <p className="mt-1 text-[10px] text-gray-400 dark:text-gray-500">
           Enter để gửi, Shift+Enter để xuống dòng
         </p>
       </div>
@@ -254,13 +254,13 @@ function MessageGroup({ group }) {
   const { user } = useAuth();
   const isMine = group.isMine;
   const align = isMine ? "justify-end" : "justify-start";
-  const bubbleColor = isMine ? "bg-blue-600 text-white" : "bg-white text-gray-900";
-  const timeColor = isMine ? "text-blue-100" : "text-gray-400";
+  const bubbleColor = isMine ? "bg-blue-600 text-white" : "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100";
+  const timeColor = isMine ? "text-blue-100" : "text-gray-400 dark:text-gray-500";
 
   return (
     <div className={`flex ${align}`}>
       {!isMine && (
-        <div className="mr-2 mt-auto w-7 h-7 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center text-[10px] font-semibold text-gray-600">
+        <div className="mr-2 mt-auto w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden flex items-center justify-center text-[10px] font-semibold text-gray-600 dark:text-gray-400">
           {group.sender?.avatar ? (
             <img
               src={group.sender.avatar}
