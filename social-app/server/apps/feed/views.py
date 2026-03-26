@@ -1,3 +1,6 @@
+# Feed is computed on-the-fly per request.
+# Posts from self + accepted friends, filtered by privacy, scored by engagement.
+
 from datetime import timedelta
 
 from django.db.models import Count, Exists, OuterRef, Q
