@@ -23,7 +23,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from apps.posts.models import Like, Post
 from apps.posts.serializers import PostSerializer
 
-from .models import Friendship, User
+from .models import Friendship, Report, User
 from .serializers import (
     FriendshipSerializer,
     LoginSerializer,
@@ -494,3 +494,31 @@ class UserPostsView(generics.ListAPIView):
             )
 
         return qs.order_by("-created_at")
+
+
+# ===========================================================================
+# Report views
+# ===========================================================================
+
+class ReportUserView(APIView):
+    """POST /api/reports/ — report a user."""
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        target_id = request.data.get('target_user')
+        reason = request.data.get('reason', 'other')
+        detail = request.data.get('detail', '')
+        if not target_id:
+            return Response({'detail': 'target_user required.'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            target = User.objects.get(pk=target_id)
+        except User.DoesNotExist:
+            return Response({'detail': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+        if str(target_id) == str(request.user.pk):
+            return Response({'detail': 'Cannot report yourself.'}, status=status.HTTP_400_BAD_REQUEST)
+        Report.objects.get_or_create(
+            reporter=request.user,
+            target_user=target,
+            defaults={'reason': reason, 'detail': detail}
+        )
+        return Response({'detail': 'Report submitted.'}, status=status.HTTP_201_CREATED)

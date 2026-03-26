@@ -308,8 +308,9 @@ export default function ProfilePage() {
         detail,
       });
       setToast({ type: "success", message: "Đã gửi báo cáo" });
-    } catch {
-      alert("Đã gửi báo cáo");
+    } catch (err) {
+      const message = err?.response?.data?.detail || "Không thể gửi báo cáo";
+      setToast({ type: "error", message });
     }
   };
 

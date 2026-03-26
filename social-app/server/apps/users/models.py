@@ -1,5 +1,6 @@
 import uuid
 
+from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 
@@ -86,3 +87,26 @@ class Friendship(models.Model):
 
     def __str__(self):
         return f"{self.from_user} → {self.to_user} ({self.status})"
+
+
+class Report(models.Model):
+    """User report model."""
+
+    class Reason(models.TextChoices):
+        SPAM = 'spam', 'Spam'
+        SENSITIVE = 'sensitive', 'Sensitive content'
+        IMPERSONATION = 'impersonation', 'Impersonation'
+        OTHER = 'other', 'Other'
+
+    reporter = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reports_sent'
+    )
+    target_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reports_received'
+    )
+    reason = models.CharField(max_length=20, choices=Reason.choices)
+    detail = models.TextField(max_length=1000, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('reporter', 'target_user')

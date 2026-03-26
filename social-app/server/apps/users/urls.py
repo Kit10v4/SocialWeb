@@ -27,4 +27,7 @@ urlpatterns = [
     path("friends/accept/<uuid:user_id>/", views.AcceptFriendRequestView.as_view(), name="friend-request-accept"),
     path("friends/reject/<uuid:user_id>/", views.RejectFriendRequestView.as_view(), name="friend-request-reject"),
     path("friends/<uuid:user_id>/", views.UnfriendView.as_view(), name="friend-unfriend"),
+
+    # --- Reports ------------------------------------------------------------
+    path("reports/", views.ReportUserView.as_view(), name="report-user"),
 ]
