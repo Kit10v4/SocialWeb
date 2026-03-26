@@ -56,15 +56,15 @@ export default function SearchPage() {
 
   useEffect(() => {
     const q = searchParams.get("q") || "";
-    if (q !== query) setQuery(q);
-  }, [searchParams, query]);
+    setQuery(q);
+  }, [searchParams]);
 
   useEffect(() => {
     const trimmed = query.trim();
     if (trimmed) {
-      setSearchParams({ q: trimmed });
+      setSearchParams({ q: trimmed }, { replace: true });
     } else {
-      setSearchParams({});
+      setSearchParams({}, { replace: true });
     }
   }, [query, setSearchParams]);
 
@@ -75,23 +75,33 @@ export default function SearchPage() {
     if (trimmed.length < 2) {
       setUserResults([]);
       setSearchedUsers(false);
+      setIsSearchingUsers(false);
       return;
     }
+
+    const controller = new AbortController();
 
     const timer = setTimeout(async () => {
       setIsSearchingUsers(true);
       setSearchedUsers(true);
       try {
-        const { data } = await profileAPI.search(trimmed);
+        const { data } = await profileAPI.search(trimmed, {
+          signal: controller.signal,
+        });
         setUserResults(Array.isArray(data) ? data : data.results ?? []);
-      } catch {
-        setUserResults([]);
+      } catch (err) {
+        if (err.name !== "CanceledError" && err.code !== "ERR_CANCELED") {
+          setUserResults([]);
+        }
       } finally {
         setIsSearchingUsers(false);
       }
     }, 300);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [query, activeTab]);
 
   useEffect(() => {
@@ -100,24 +110,34 @@ export default function SearchPage() {
     if (trimmed.length < 2) {
       setPostResults([]);
       setSearchedPosts(false);
+      setIsSearchingPosts(false);
       return;
     }
+
+    const controller = new AbortController();
 
     const timer = setTimeout(async () => {
       setIsSearchingPosts(true);
       setSearchedPosts(true);
       try {
-        const { data } = await postAPI.search(trimmed);
+        const { data } = await postAPI.search(trimmed, undefined, {
+          signal: controller.signal,
+        });
         const list = Array.isArray(data) ? data : data.results ?? [];
         setPostResults(list);
-      } catch {
-        setPostResults([]);
+      } catch (err) {
+        if (err.name !== "CanceledError" && err.code !== "ERR_CANCELED") {
+          setPostResults([]);
+        }
       } finally {
         setIsSearchingPosts(false);
       }
     }, 300);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [query, activeTab]);
 
   // ── Friend request from search result ──────────────────────────────────

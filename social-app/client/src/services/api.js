@@ -98,7 +98,8 @@ export const profileAPI = {
     api.put("/users/me/", data, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
-  search: (q) => api.get(`/users/search/?q=${encodeURIComponent(q)}`),
+  search: (q, options = {}) =>
+    api.get(`/users/search/?q=${encodeURIComponent(q)}`, options),
   getSuggestions: () => api.get("/users/suggestions/"),
   getUserPosts: (username) => api.get(`/users/${username}/posts/`),
 };
@@ -116,7 +117,8 @@ export const friendsAPI = {
 // ── Posts API helpers ─────────────────────────────────────────────────
 export const postAPI = {
   list: (params) => api.get("/posts/", { params }),
-  search: (q, params) => api.get("/posts/search/", { params: { q, ...params } }),
+  search: (q, params, options = {}) =>
+    api.get("/posts/search/", { params: { q, ...params }, ...options }),
   create: (data) =>
     api.post("/posts/", data, {
       headers: { "Content-Type": "multipart/form-data" },
