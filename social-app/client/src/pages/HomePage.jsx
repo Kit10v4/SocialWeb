@@ -360,9 +360,9 @@ export default function HomePage() {
       </nav>
 
       {/* 3-column responsive layout */}
-      <main className="max-w-6xl mx-auto px-0 sm:px-4 lg:px-6 py-4 flex flex-col md:flex-row gap-4">
+      <main className="max-w-6xl mx-auto px-0 sm:px-4 lg:px-6 py-4 flex flex-col md:flex-row md:items-start gap-4">
         {/* Left column – user card + nav (hidden on mobile) */}
-        <aside className="hidden md:block md:w-1/3 lg:w-1/4">
+        <aside className="hidden md:block md:w-1/3 lg:w-1/4 md:sticky md:top-14">
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 mb-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden flex items-center justify-center">
@@ -419,7 +419,7 @@ export default function HomePage() {
 
         {/* Middle column – stories + composer + feed */}
          <section
-           className="w-full md:flex-1 lg:w-1/2 md:max-w-2xl md:mx-auto"
+           className="w-full md:flex-1 lg:w-1/2 md:max-w-2xl md:mx-auto md:max-h-[calc(100vh-56px-2rem)] md:overflow-y-auto scrollbar-thin"
            onTouchStart={handleTouchStart}
            onTouchEnd={handleTouchEnd}
          >
@@ -589,7 +589,7 @@ export default function HomePage() {
         </section>
 
         {/* Right column – suggestions + trending (desktop only) */}
-        <aside className="hidden lg:block lg:w-1/4 space-y-4">
+        <aside className="hidden lg:block lg:w-1/4 lg:sticky lg:top-14 space-y-4">
           {/* Friend suggestions */}
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-3">
             <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-2">

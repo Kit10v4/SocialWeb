@@ -17,3 +17,9 @@
 .animate-slide-up {
   animation: slide-up 0.3s ease-out;
 }
+
+/* Custom thin scrollbar */
+.scrollbar-thin::-webkit-scrollbar { width: 4px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 4px; }
+.scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #d1d5db; }
