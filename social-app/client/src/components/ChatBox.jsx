@@ -212,7 +212,7 @@ export default function ChatBox({ conversation }) {
             <button
               type="button"
               onClick={() => setShowEmoji((v) => !v)}
-              className="absolute right-2 bottom-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
             >
               <Smile className="w-4 h-4" />
             </button>
