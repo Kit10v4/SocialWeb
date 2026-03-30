@@ -2,7 +2,7 @@
 
 Mạng xã hội full-stack hiện đại xây dựng với **Django + React**, hỗ trợ chat real-time, news feed, thông báo tức thì và nhiều tính năng tương tự Facebook.
 
-🔗 **Demo live:** [https://social-web-tau.vercel.app](https://social-web-tau.vercel.app)  
+🔗 **Demo live:** [https://fbfake.vercel.app](https://fbfake.vercel.app)  
 🔧 **Backend API:** [https://social-app-api-p54k.onrender.com](https://social-app-api-p54k.onrender.com)
 
 ---
@@ -308,14 +308,6 @@ Like bài viết cập nhật UI ngay lập tức, rollback nếu API lỗi — 
 | Home Feed                     | Profile                             | Chat                          |
 | ----------------------------- | ----------------------------------- | ----------------------------- |
 | ![feed](screenshots/feed.png) | ![profile](screenshots/profile.png) | ![chat](screenshots/chat.png) |
-
----
-
-## 👨‍💻 Tác giả
-
-**Kit10v4**  
-📧 Email: eoauiahihi135@gmail.com  
-🐙 GitHub: [@Kit10v4](https://github.com/Kit10v4)
 
 ---
 
