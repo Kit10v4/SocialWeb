@@ -64,14 +64,14 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
 
   // ── Render ─────────────────────────────────────────────────────────────
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm sm:p-4">
-      <div className="bg-white w-full h-full sm:max-w-lg sm:max-h-[90vh] sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm sm:p-4">
+      <div className="bg-white dark:bg-gray-800 w-full h-full sm:max-w-lg sm:max-h-[90vh] sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900">Chỉnh sửa profile</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Chỉnh sửa profile</h2>
           <button
             onClick={onClose}
-            className="h-8 w-8 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
+            className="h-8 w-8 rounded-full flex items-center justify-center text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300 transition"
           >
             <X className="h-5 w-5" />
           </button>
@@ -82,7 +82,7 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
           <div className="p-6 space-y-6">
             {/* Cover photo */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 Ảnh bìa
               </label>
               <div
@@ -114,7 +114,7 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
 
             {/* Avatar */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 Ảnh đại diện
               </label>
               <div className="flex items-center gap-4">
@@ -141,11 +141,11 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
                   <button
                     type="button"
                     onClick={() => avatarInputRef.current?.click()}
-                    className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition"
+                    className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition"
                   >
                     Chọn ảnh mới
                   </button>
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                     JPG, PNG — tối đa 5 MB. Ảnh sẽ được resize về 400×400.
                   </p>
                 </div>
@@ -163,7 +163,7 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
             <div>
               <label
                 htmlFor="bio"
-                className="block text-sm font-semibold text-gray-700 mb-1.5"
+                className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5"
               >
                 Bio
               </label>
@@ -174,16 +174,16 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
                 maxLength={500}
                 rows={3}
                 placeholder="Giới thiệu về bản thân..."
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition"
+                className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition"
               />
-              <p className="text-right text-xs text-gray-400 mt-1">{bio.length}/500</p>
+              <p className="text-right text-xs text-gray-400 dark:text-gray-500 mt-1">{bio.length}/500</p>
             </div>
 
             {/* Birthday */}
             <div>
               <label
                 htmlFor="dob"
-                className="block text-sm font-semibold text-gray-700 mb-1.5"
+                className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5"
               >
                 Ngày sinh
               </label>
@@ -193,25 +193,25 @@ export default function EditProfileModal({ profile, onClose, onSaved }) {
                 value={dob}
                 onChange={(e) => setDob(e.target.value)}
                 max={new Date().toISOString().split("T")[0]}
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
               />
             </div>
 
             {/* Error */}
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
+              <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm rounded-xl px-4 py-3">
                 {error}
               </div>
             )}
           </div>
 
           {/* Footer */}
-          <div className="flex gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
+          <div className="flex gap-3 px-6 py-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
             <button
               type="button"
               onClick={onClose}
               disabled={isLoading}
-              className="flex-1 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition"
+              className="flex-1 py-2.5 text-sm font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition"
             >
               Huỷ
             </button>

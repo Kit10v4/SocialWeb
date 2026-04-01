@@ -73,18 +73,18 @@ export default function SearchUserModal({ isOpen, onClose, onConversationCreated
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose?.();
       }}
     >
-      <div className="w-full max-w-md rounded-2xl bg-white shadow-xl overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-          <h2 className="text-base font-semibold">Tin nhắn mới</h2>
+      <div className="w-full max-w-md rounded-2xl bg-white dark:bg-gray-800 shadow-xl overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">Tin nhắn mới</h2>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500"
+            className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400"
           >
             <span className="sr-only">Đóng</span>
             <X className="w-4 h-4" />
@@ -93,19 +93,19 @@ export default function SearchUserModal({ isOpen, onClose, onConversationCreated
 
         <div className="p-4 space-y-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500 pointer-events-none" />
             <input
               ref={inputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Tìm kiếm người dùng..."
-              className="w-full pl-9 pr-9 py-2.5 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-9 pr-9 py-2.5 bg-gray-100 dark:bg-gray-700 rounded-full text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             {query && (
               <button
                 type="button"
                 onClick={() => setQuery("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 flex items-center justify-center rounded-full text-gray-400 hover:bg-gray-200 hover:text-gray-600"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 flex items-center justify-center rounded-full text-gray-400 dark:text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-600 dark:hover:text-gray-300"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -113,27 +113,27 @@ export default function SearchUserModal({ isOpen, onClose, onConversationCreated
           </div>
 
           {error && (
-            <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-md px-2 py-1.5">
+            <p className="text-xs text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800 rounded-md px-2 py-1.5">
               {error}
             </p>
           )}
 
           <div className="max-h-72 overflow-y-auto">
             {isSearching && (
-              <div className="flex justify-center py-6 text-gray-400 text-sm">
+              <div className="flex justify-center py-6 text-gray-400 dark:text-gray-500 text-sm">
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Đang tìm kiếm...
               </div>
             )}
 
             {!isSearching && !searched && (
-              <div className="flex flex-col items-center justify-center py-10 text-gray-400 text-sm">
+              <div className="flex flex-col items-center justify-center py-10 text-gray-400 dark:text-gray-500 text-sm">
                 <Search className="h-8 w-8 mb-2 opacity-30" />
                 Nhập tên để bắt đầu tìm kiếm
               </div>
             )}
 
             {!isSearching && searched && results.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-10 text-gray-400 text-sm">
+              <div className="flex flex-col items-center justify-center py-10 text-gray-400 dark:text-gray-500 text-sm">
                 <Search className="h-8 w-8 mb-2 opacity-30" />
                 Không tìm thấy kết quả cho "{query}"
               </div>
@@ -149,9 +149,9 @@ export default function SearchUserModal({ isOpen, onClose, onConversationCreated
                       type="button"
                       onClick={() => handleSelect(u)}
                       disabled={!!creatingId}
-                      className="w-full flex items-center gap-3 px-3 py-2 rounded-xl border border-gray-100 hover:bg-gray-50 transition disabled:opacity-60"
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-xl border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-60"
                     >
-                      <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center text-sm font-semibold text-gray-600">
+                      <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden flex items-center justify-center text-sm font-semibold text-gray-600 dark:text-gray-300">
                         {u.avatar ? (
                           <img
                             src={u.avatar}
@@ -163,14 +163,14 @@ export default function SearchUserModal({ isOpen, onClose, onConversationCreated
                         )}
                       </div>
                       <div className="flex-1 min-w-0 text-left">
-                        <p className="text-sm font-semibold text-gray-900 truncate">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
                           {u.username}
                         </p>
                       </div>
                       {isCreating ? (
-                        <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                        <Loader2 className="w-4 h-4 animate-spin text-blue-600 dark:text-blue-400" />
                       ) : (
-                        <span className="text-xs text-blue-600 font-semibold">Nhắn tin</span>
+                        <span className="text-xs text-blue-600 dark:text-blue-400 font-semibold">Nhắn tin</span>
                       )}
                     </button>
                   );

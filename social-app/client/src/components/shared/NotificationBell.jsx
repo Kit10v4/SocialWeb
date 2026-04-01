@@ -362,7 +362,7 @@ export default function NotificationBell() {
       <button
         type="button"
         onClick={handleToggle}
-        className="relative flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 text-gray-600"
+        className="relative flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
@@ -373,26 +373,26 @@ export default function NotificationBell() {
       </button>
 
       <div
-        className={`absolute right-0 mt-2 w-80 max-w-[90vw] bg-white rounded-2xl shadow-xl border border-gray-100 z-40 overflow-hidden transition-all duration-200 ${
+        className={`absolute right-0 mt-2 w-80 max-w-[90vw] bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 z-40 overflow-hidden transition-all duration-200 ${
           open ? "max-h-[520px] opacity-100" : "max-h-0 opacity-0 pointer-events-none"
         }`}
       >
-        <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100">
-          <p className="text-sm font-semibold text-gray-900">Thông báo</p>
+        <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100 dark:border-gray-700">
+          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Thông báo</p>
           {unreadCount > 0 && (
             <button
               type="button"
               onClick={handleMarkAllRead}
-              className="text-[11px] text-blue-600 hover:underline"
+              className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline"
             >
               Đánh dấu đã đọc hết
             </button>
           )}
         </div>
 
-        <div className="max-h-80 overflow-y-auto divide-y divide-gray-100">
+        <div className="max-h-80 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700">
           {groupedList.length === 0 && (
-            <div className="px-4 py-6 text-xs text-gray-400 text-center">
+            <div className="px-4 py-6 text-xs text-gray-400 dark:text-gray-500 text-center">
               Chưa có thông báo.
             </div>
           )}
@@ -408,14 +408,14 @@ export default function NotificationBell() {
                 key={group.id}
                 type="button"
                 onClick={() => handleNotificationClick(group)}
-                className={`w-full text-left px-4 py-3 text-xs flex gap-2 hover:bg-gray-50 ${
-                  group.is_read ? "bg-white" : "bg-blue-50/60"
+                className={`w-full text-left px-4 py-3 text-xs flex gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                  group.is_read ? "bg-white dark:bg-gray-800" : "bg-blue-50/60 dark:bg-blue-900/30"
                 }`}
               >
                 <div className="relative w-10 h-8 flex-shrink-0">
                   <div className="flex items-center">
                     {!hasMultipleActors && (
-                      <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center text-[11px] font-semibold text-gray-600">
+                      <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden flex items-center justify-center text-[11px] font-semibold text-gray-600 dark:text-gray-300">
                         {actors[0]?.avatar ? (
                           <img
                             src={actors[0].avatar}
@@ -429,7 +429,7 @@ export default function NotificationBell() {
                     )}
                     {hasMultipleActors && (
                       <>
-                        <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center text-[11px] font-semibold text-gray-600 border border-white">
+                        <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden flex items-center justify-center text-[11px] font-semibold text-gray-600 dark:text-gray-300 border border-white dark:border-gray-800">
                           {actors[0]?.avatar ? (
                             <img
                               src={actors[0].avatar}
@@ -440,7 +440,7 @@ export default function NotificationBell() {
                             <span>{actors[0]?.username?.[0]?.toUpperCase()}</span>
                           )}
                         </div>
-                        <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center text-[11px] font-semibold text-gray-600 border border-white ml-[-8px]">
+                        <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden flex items-center justify-center text-[11px] font-semibold text-gray-600 dark:text-gray-300 border border-white dark:border-gray-800 ml-[-8px]">
                           {actors[1]?.avatar ? (
                             <img
                               src={actors[1].avatar}
@@ -461,10 +461,10 @@ export default function NotificationBell() {
                   </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-gray-800 truncate mb-0.5">
+                  <p className="text-gray-800 dark:text-gray-200 truncate mb-0.5">
                     {formatGroupMessage(group, firstNotification)}
                   </p>
-                  <p className="text-[10px] text-gray-400">
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500">
                     {new Date(group.latest_at).toLocaleString("vi-VN", {
                       hour: "2-digit",
                       minute: "2-digit",

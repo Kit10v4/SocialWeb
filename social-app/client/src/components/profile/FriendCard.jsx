@@ -10,7 +10,7 @@ export default function FriendCard({ friend, mutualCount }) {
   return (
     <Link
       to={`/profile/${friend.username}`}
-      className="group flex flex-col items-center bg-white border border-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+      className="group flex flex-col items-center bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
     >
       {/* Avatar */}
       <div className="h-20 w-20 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-indigo-500 shadow-sm flex-shrink-0">
@@ -28,12 +28,12 @@ export default function FriendCard({ friend, mutualCount }) {
       </div>
 
       {/* Info */}
-      <p className="mt-3 font-semibold text-gray-900 text-sm text-center truncate w-full group-hover:text-blue-600 transition-colors">
+      <p className="mt-3 font-semibold text-gray-900 dark:text-gray-100 text-sm text-center truncate w-full group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
         {friend.username}
       </p>
 
       {mutualCount !== undefined && mutualCount > 0 && (
-        <p className="flex items-center gap-1 text-xs text-gray-400 mt-0.5">
+        <p className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 mt-0.5">
           <Users className="h-3 w-3" />
           {mutualCount} bạn chung
         </p>

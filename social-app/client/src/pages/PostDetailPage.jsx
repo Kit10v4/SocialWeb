@@ -111,7 +111,7 @@ export default function PostDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-16 md:pb-0">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 pb-16 md:pb-0">
       <div className="md:hidden">
         <PageHeader title="Chi tiết bài viết" />
       </div>
@@ -119,7 +119,7 @@ export default function PostDetailPage() {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="mb-3 text-sm font-semibold text-blue-600 hover:underline"
+          className="mb-3 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline"
         >
           ← Quay lại
         </button>
@@ -139,7 +139,7 @@ export default function PostDetailPage() {
               onDelete={() => navigate(-1)}
             />
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4">
               <CommentSection
                 comments={transformedComments}
                 currentUserId={user?.id}
@@ -155,7 +155,7 @@ export default function PostDetailPage() {
         )}
 
         {isPostError && !isPostLoading && postError?.response?.status !== 404 && (
-          <div className="bg-white rounded-2xl border border-red-100 text-red-600 text-sm p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-red-100 dark:border-red-800 text-red-600 dark:text-red-400 text-sm p-4">
             Không thể tải bài viết.
           </div>
         )}

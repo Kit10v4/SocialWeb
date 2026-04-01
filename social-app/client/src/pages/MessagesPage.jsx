@@ -46,16 +46,16 @@ export default function MessagesPage() {
   const showListMobile = showListOnMobile || !selected;
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-20 md:pb-0">
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-40">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 pb-20 md:pb-0">
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 sticky top-0 z-40">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={() => navigate(-1)} className="p-2 rounded-full hover:bg-gray-100">
-              <ArrowLeft className="w-5 h-5" />
+            <button onClick={() => navigate(-1)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+              <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             </button>
-            <span className="font-semibold text-base">Tin nhắn</span>
+            <span className="font-semibold text-base text-gray-900 dark:text-gray-100">Tin nhắn</span>
           </div>
-          <Link to="/" className="p-2 rounded-full hover:bg-gray-100 text-gray-500">
+          <Link to="/" className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400">
             <X className="w-5 h-5" />
           </Link>
         </div>
@@ -90,11 +90,11 @@ export default function MessagesPage() {
                   <button
                     type="button"
                     onClick={() => setSelected(null)}
-                    className="p-2 rounded-full hover:bg-gray-100 mr-1 md:hidden"
+                    className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 mr-1 md:hidden"
                   >
-                    <ArrowLeft className="w-5 h-5" />
+                    <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
                   </button>
-                  <p className="text-xs text-gray-500 truncate">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                     Đang chat với {selected.participants
                       .filter((p) => p.id !== user?.id)
                       .map((p) => p.username)
@@ -104,7 +104,7 @@ export default function MessagesPage() {
                 <ChatBox conversation={selected} />
               </div>
             ) : (
-              <div className="h-full flex items-center justify-center bg-white rounded-2xl shadow-sm border border-gray-100 text-xs text-gray-400">
+              <div className="h-full flex items-center justify-center bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500">
                 Chọn một cuộc trò chuyện để bắt đầu.
               </div>
             )}

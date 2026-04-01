@@ -77,28 +77,28 @@ export default function RegisterForm() {
   ];
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 px-4">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-blue-600">Social App</h1>
-          <p className="text-gray-500 mt-2">Create your account</p>
+          <h1 className="text-3xl font-bold text-blue-600 dark:text-blue-400">Social App</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-2">Create your account</p>
         </div>
 
         {/* Card */}
         <form
           onSubmit={handleSubmit}
-          className="bg-white rounded-xl shadow-md p-8 space-y-5"
+          className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 space-y-5"
         >
           {errors.general && (
-            <div className="bg-red-50 text-red-600 text-sm rounded-lg px-4 py-3">
+            <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm rounded-lg px-4 py-3">
               {errors.general}
             </div>
           )}
 
           {fields.map(({ name, label, type, placeholder }) => (
             <div key={name}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {label}
               </label>
               <input
@@ -107,12 +107,12 @@ export default function RegisterForm() {
                 value={form[name]}
                 onChange={handleChange}
                 placeholder={placeholder}
-                className={`w-full px-4 py-2.5 rounded-lg border text-sm outline-none transition
-                  ${errors[name] ? "border-red-400 focus:ring-red-400" : "border-gray-300 focus:ring-blue-500"}
+                className={`w-full px-4 py-2.5 rounded-lg border text-sm outline-none transition bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500
+                  ${errors[name] ? "border-red-400 focus:ring-red-400" : "border-gray-300 dark:border-gray-600 focus:ring-blue-500"}
                   focus:ring-2 focus:border-transparent`}
               />
               {errors[name] && (
-                <p className="text-red-500 text-xs mt-1">{errors[name]}</p>
+                <p className="text-red-500 dark:text-red-400 text-xs mt-1">{errors[name]}</p>
               )}
             </div>
           ))}
@@ -128,9 +128,9 @@ export default function RegisterForm() {
         </form>
 
         {/* Footer */}
-        <p className="text-center text-sm text-gray-500 mt-6">
+        <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
           Already have an account?{" "}
-          <Link to="/login" className="text-blue-600 font-medium hover:underline">
+          <Link to="/login" className="text-blue-600 dark:text-blue-400 font-medium hover:underline">
             Sign In
           </Link>
         </p>

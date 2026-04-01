@@ -349,12 +349,12 @@ export default function ProfilePage() {
 
   // ── Render ─────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gray-100 pb-20 md:pb-0">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 pb-20 md:pb-0">
       <div className="md:hidden">
         <PageHeader title="Trang cá nhân" />
       </div>
       {/* ── Profile card ──────────────────────────────────────────────── */}
-      <div className="bg-white shadow-sm">
+      <div className="bg-white dark:bg-gray-800 shadow-sm">
         <div className="max-w-4xl mx-auto">
 
           {/* Cover photo */}
@@ -395,7 +395,7 @@ export default function ProfilePage() {
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 -mt-12 sm:-mt-14 pb-4">
               {/* Avatar */}
               <div className="relative w-fit">
-                <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-full ring-4 ring-white bg-gray-200 overflow-hidden shadow-md">
+                <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-full ring-4 ring-white dark:ring-gray-800 bg-gray-200 dark:bg-gray-700 overflow-hidden shadow-md">
                   {profile.avatar ? (
                     <img
                       src={profile.avatar}
@@ -412,10 +412,10 @@ export default function ProfilePage() {
                 {isOwnProfile && (
                   <button
                     onClick={() => setShowEditModal(true)}
-                    className="absolute bottom-0.5 right-0.5 h-7 w-7 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center shadow transition"
+                    className="absolute bottom-0.5 right-0.5 h-7 w-7 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-full flex items-center justify-center shadow transition"
                     title="Thay ảnh đại diện"
                   >
-                    <Camera className="h-3.5 w-3.5 text-gray-700" />
+                    <Camera className="h-3.5 w-3.5 text-gray-700 dark:text-gray-300" />
                   </button>
                 )}
               </div>
@@ -443,11 +443,11 @@ export default function ProfilePage() {
 
             {/* Name / bio / stats */}
             <div className="pb-1">
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight">
                 {profile.username}
               </h1>
               {profile.bio && (
-                <p className="mt-1.5 text-gray-600 text-sm max-w-xl leading-relaxed">
+                <p className="mt-1.5 text-gray-600 dark:text-gray-400 text-sm max-w-xl leading-relaxed">
                   {profile.bio}
                 </p>
               )}
@@ -458,15 +458,15 @@ export default function ProfilePage() {
             </div>
 
             {/* Tabs */}
-            <div className="flex overflow-x-auto mt-2 border-t border-gray-100 -mx-4 sm:-mx-8 px-4 sm:px-8 scrollbar-none">
+            <div className="flex overflow-x-auto mt-2 border-t border-gray-100 dark:border-gray-700 -mx-4 sm:-mx-8 px-4 sm:px-8 scrollbar-none">
               {TAB_CONFIG.map(({ key, label, icon: Icon }) => (
                 <button
                   key={key}
                   onClick={() => setActiveTab(key)}
                   className={`flex items-center gap-1.5 px-4 py-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
                     activeTab === key
-                      ? "border-blue-600 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50"
+                      ? "border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-400"
+                      : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -490,7 +490,7 @@ export default function ProfilePage() {
                 <PostCardSkeleton />
               </div>
             ) : postsError ? (
-              <div className="bg-white rounded-2xl border border-red-100 text-red-600 text-sm p-4">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-red-100 dark:border-red-800 text-red-600 dark:text-red-400 text-sm p-4">
                 <p className="font-medium">Không thể tải bài viết.</p>
               </div>
             ) : posts.length === 0 ? (
@@ -521,7 +521,7 @@ export default function ProfilePage() {
                 {[...Array(9)].map((_, i) => (
                   <div
                     key={i}
-                    className="aspect-square bg-gray-200 rounded-lg animate-pulse"
+                    className="aspect-square bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"
                   />
                 ))}
               </div>
@@ -537,7 +537,7 @@ export default function ProfilePage() {
                     key={`${photo.postId}-${idx}`}
                     type="button"
                     onClick={() => handlePhotoClick(idx)}
-                    className="aspect-square overflow-hidden rounded-lg bg-gray-100 hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="aspect-square overflow-hidden rounded-lg bg-gray-100 dark:bg-gray-700 hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <img
                       src={photo.url}
@@ -616,17 +616,17 @@ export default function ProfilePage() {
 function StatItem({ count, label }) {
   return (
     <div className="text-sm">
-      <span className="font-bold text-gray-900">{count ?? 0}</span>
-      <span className="text-gray-500 ml-1">{label}</span>
+      <span className="font-bold text-gray-900 dark:text-gray-100">{count ?? 0}</span>
+      <span className="text-gray-500 dark:text-gray-400 ml-1">{label}</span>
     </div>
   );
 }
 
 function EmptyState({ icon, message }) {
   return (
-    <div className="flex flex-col items-center justify-center bg-white rounded-2xl border border-gray-100 shadow-sm py-16 text-gray-300">
+    <div className="flex flex-col items-center justify-center bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm py-16 text-gray-300 dark:text-gray-600">
       <div className="mb-3">{icon}</div>
-      <p className="font-medium text-gray-400">{message}</p>
+      <p className="font-medium text-gray-400 dark:text-gray-500">{message}</p>
     </div>
   );
 }
@@ -639,8 +639,8 @@ function Toast({ type, message, onClose }) {
       <div
         className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border ${
           isSuccess
-            ? "bg-green-50 border-green-200 text-green-800"
-            : "bg-red-50 border-red-200 text-red-800"
+            ? "bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800 text-green-800 dark:text-green-300"
+            : "bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300"
         }`}
       >
         {isSuccess ? (
@@ -651,7 +651,7 @@ function Toast({ type, message, onClose }) {
         <p className="text-sm font-medium">{message}</p>
         <button
           onClick={onClose}
-          className="ml-2 text-gray-400 hover:text-gray-600"
+          className="ml-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
         >
           <XCircle className="w-4 h-4" />
         </button>
@@ -684,7 +684,7 @@ function ActionButtons({
   const base =
     "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition w-full sm:w-auto justify-center";
   const primary = `${base} bg-blue-600 hover:bg-blue-700 text-white shadow-sm`;
-  const secondary = `${base} bg-gray-100 hover:bg-gray-200 text-gray-800`;
+  const secondary = `${base} bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200`;
   const messageButton = `${base} bg-blue-600 hover:bg-blue-700 text-white shadow-sm`;
 
   useEffect(() => {
@@ -770,10 +770,10 @@ function ActionButtons({
                 />
               </button>
               {dropdownOpen && (
-                <div className="absolute right-0 top-full mt-1.5 bg-white shadow-xl rounded-xl py-1 min-w-[160px] border border-gray-100 z-20">
+                <div className="absolute right-0 top-full mt-1.5 bg-white dark:bg-gray-800 shadow-xl rounded-xl py-1 min-w-[160px] border border-gray-100 dark:border-gray-700 z-20">
                   <button
                     onClick={onUnfriend}
-                    className="w-full flex items-center gap-2 text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition rounded-lg mx-auto"
+                    className="w-full flex items-center gap-2 text-left px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition rounded-lg mx-auto"
                   >
                     <UserMinus className="h-4 w-4" />
                     Huỷ kết bạn
@@ -784,15 +784,15 @@ function ActionButtons({
             <div className="relative flex-1 sm:flex-none" ref={menuRef}>
               <button
                 onClick={() => setShowMenu((v) => !v)}
-                className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 w-full sm:w-auto justify-center flex items-center"
+                className="p-2 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 w-full sm:w-auto justify-center flex items-center"
                 type="button"
               >
-                <MoreHorizontal className="w-5 h-5" />
+                <MoreHorizontal className="w-5 h-5 text-gray-700 dark:text-gray-300" />
               </button>
               {showMenu && (
-                <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-gray-100 py-1 min-w-[180px] z-20">
+                <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 py-1 min-w-[180px] z-20">
                   <button
-                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2"
+                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-700 dark:text-gray-300"
                     onClick={() => {
                       setShowMenu(false);
                       onCopyProfileLink?.();
@@ -801,7 +801,7 @@ function ActionButtons({
                     <Link2 className="w-4 h-4" /> Sao chép liên kết profile
                   </button>
                   <button
-                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2 text-amber-600"
+                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 text-amber-600 dark:text-amber-400"
                     onClick={() => {
                       setShowMenu(false);
                       setShowReportModal(true);
@@ -810,7 +810,7 @@ function ActionButtons({
                     <Flag className="w-4 h-4" /> Báo cáo người dùng
                   </button>
                   <button
-                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2 text-red-600"
+                    className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 text-red-600 dark:text-red-400"
                     onClick={() => {
                       setShowMenu(false);
                       onBlockUser?.();
@@ -829,15 +829,15 @@ function ActionButtons({
         <div className="relative w-full sm:w-auto" ref={menuRef}>
           <button
             onClick={() => setShowMenu((v) => !v)}
-            className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 w-full sm:w-auto justify-center flex items-center"
+            className="p-2 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 w-full sm:w-auto justify-center flex items-center"
             type="button"
           >
-            <MoreHorizontal className="w-5 h-5" />
+            <MoreHorizontal className="w-5 h-5 text-gray-700 dark:text-gray-300" />
           </button>
           {showMenu && (
-            <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-gray-100 py-1 min-w-[180px] z-20">
+            <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 py-1 min-w-[180px] z-20">
               <button
-                className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2"
+                className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-700 dark:text-gray-300"
                 onClick={() => {
                   setShowMenu(false);
                   onCopyProfileLink?.();
@@ -846,7 +846,7 @@ function ActionButtons({
                 <Link2 className="w-4 h-4" /> Sao chép liên kết profile
               </button>
               <button
-                className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2 text-amber-600"
+                className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 text-amber-600 dark:text-amber-400"
                 onClick={() => {
                   setShowMenu(false);
                   setShowReportModal(true);
@@ -855,7 +855,7 @@ function ActionButtons({
                 <Flag className="w-4 h-4" /> Báo cáo người dùng
               </button>
               <button
-                className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center gap-2 text-red-600"
+                className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 text-red-600 dark:text-red-400"
                 onClick={() => {
                   setShowMenu(false);
                   onBlockUser?.();
@@ -892,23 +892,24 @@ function ReportModal({ onClose, onSubmit }) {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-gray-100">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-          <p className="font-semibold text-sm">Báo cáo người dùng</p>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100">
+    <div className="fixed inset-0 z-50 bg-black/40 dark:bg-black/70 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+          <p className="font-semibold text-sm text-gray-900 dark:text-gray-100">Báo cáo người dùng</p>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400">
             <X className="w-4 h-4" />
           </button>
         </div>
         <div className="p-4 space-y-3">
           {options.map((item) => (
-            <label key={item.value} className="flex items-center gap-2 text-sm">
+            <label key={item.value} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
               <input
                 type="radio"
                 name="report-reason"
                 value={item.value}
                 checked={reason === item.value}
                 onChange={(e) => setReason(e.target.value)}
+                className="accent-blue-600"
               />
               {item.label}
             </label>
@@ -918,12 +919,12 @@ function ReportModal({ onClose, onSubmit }) {
             onChange={(e) => setDetail(e.target.value)}
             rows={4}
             placeholder="Mô tả thêm (không bắt buộc)"
-            className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-xl border border-gray-200 dark:border-gray-600 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
           />
           <div className="flex justify-end gap-2 pt-1">
             <button
               onClick={onClose}
-              className="px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-sm font-medium"
+              className="px-3 py-2 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300"
             >
               Huỷ
             </button>

@@ -106,7 +106,7 @@ export default function CommentSection({
       {!isLoading && (
         <>
           {error || internalError ? (
-            <p className="mb-2 text-xs text-red-500 bg-red-50 border border-red-100 rounded px-2 py-1.5">
+            <p className="mb-2 text-xs text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800 rounded px-2 py-1.5">
               {error || internalError}
             </p>
           ) : null}
@@ -119,17 +119,17 @@ export default function CommentSection({
                   <img
                     src={getAvatarUrl(comment.author?.avatarUrl, comment.author?.name)}
                     alt={comment.author?.name}
-                    className="w-8 h-8 rounded-full object-cover bg-gray-200 mt-0.5 cursor-pointer hover:opacity-80"
+                    className="w-8 h-8 rounded-full object-cover bg-gray-200 dark:bg-gray-700 mt-0.5 cursor-pointer hover:opacity-80"
                   />
                 </Link>
                 <div className="flex-1">
-                  <div className="inline-block rounded-2xl bg-gray-100 px-3 py-2">
-                    <p className="text-xs font-semibold text-gray-900">
+                  <div className="inline-block rounded-2xl bg-gray-100 dark:bg-gray-700 px-3 py-2">
+                    <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
                       {comment.author?.name}
                     </p>
-                    <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
+                    <p className="text-sm whitespace-pre-wrap text-gray-800 dark:text-gray-200">{comment.content}</p>
                   </div>
-                  <div className="flex items-center gap-3 mt-1 text-[11px] text-gray-500">
+                  <div className="flex items-center gap-3 mt-1 text-[11px] text-gray-500 dark:text-gray-400">
                     <span>{formatRelativeTime(comment.createdAt)}</span>
                     <button
                       type="button"
@@ -141,7 +141,7 @@ export default function CommentSection({
                     {comment.author?.id === currentUserId && (
                       <button
                         type="button"
-                        className="font-medium hover:underline text-red-500 disabled:opacity-50"
+                        className="font-medium hover:underline text-red-500 dark:text-red-400 disabled:opacity-50"
                         disabled={deletingIds.has(comment.id)}
                         onClick={() => handleDelete(comment.id)}
                       >
@@ -159,22 +159,22 @@ export default function CommentSection({
                             <img
                               src={getAvatarUrl(reply.author?.avatarUrl, reply.author?.name)}
                               alt={reply.author?.name}
-                              className="w-7 h-7 rounded-full object-cover bg-gray-200 mt-0.5 cursor-pointer hover:opacity-80"
+                              className="w-7 h-7 rounded-full object-cover bg-gray-200 dark:bg-gray-700 mt-0.5 cursor-pointer hover:opacity-80"
                             />
                           </Link>
                           <div>
-                            <div className="inline-block rounded-2xl bg-gray-100 px-3 py-2">
-                              <p className="text-xs font-semibold text-gray-900">
+                            <div className="inline-block rounded-2xl bg-gray-100 dark:bg-gray-700 px-3 py-2">
+                              <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
                                 {reply.author?.name}
                               </p>
-                              <p className="text-sm whitespace-pre-wrap">{reply.content}</p>
+                              <p className="text-sm whitespace-pre-wrap text-gray-800 dark:text-gray-200">{reply.content}</p>
                             </div>
-                            <div className="flex items-center gap-3 mt-1 text-[11px] text-gray-500">
+                            <div className="flex items-center gap-3 mt-1 text-[11px] text-gray-500 dark:text-gray-400">
                               <span>{formatRelativeTime(reply.createdAt)}</span>
                               {reply.author?.id === currentUserId && (
                                 <button
                                   type="button"
-                                  className="font-medium hover:underline text-red-500 disabled:opacity-50"
+                                  className="font-medium hover:underline text-red-500 dark:text-red-400 disabled:opacity-50"
                                   disabled={deletingIds.has(reply.id)}
                                   onClick={() => handleDelete(reply.id)}
                                 >
@@ -197,7 +197,7 @@ export default function CommentSection({
                         onKeyDown={(e) => handleKeyDown(e, comment.id)}
                         rows={1}
                         placeholder="Viết trả lời..."
-                        className="w-full text-sm rounded-2xl border border-gray-200 px-3 py-2 bg-white outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full text-sm rounded-2xl border border-gray-200 dark:border-gray-600 px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600"
                       />
                     </div>
                   )}
@@ -210,7 +210,7 @@ export default function CommentSection({
             <button
               type="button"
               onClick={() => setVisibleCount((v) => v + 3)}
-              className="mt-2 text-xs font-medium text-blue-600 hover:underline"
+              className="mt-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
             >
               Xem thêm {remaining} bình luận
             </button>
@@ -223,7 +223,7 @@ export default function CommentSection({
         <img
           src={currentUserAvatar || DEFAULT_AVATAR}
           alt="You"
-          className="w-8 h-8 rounded-full object-cover bg-gray-200"
+          className="w-8 h-8 rounded-full object-cover bg-gray-200 dark:bg-gray-700"
         />
         <div className="flex-1">
           <textarea
@@ -232,9 +232,9 @@ export default function CommentSection({
             onKeyDown={(e) => handleKeyDown(e, replyTo)}
             rows={1}
             placeholder="Viết bình luận..."
-            className="w-full text-sm rounded-2xl border border-gray-200 px-3 py-2 bg-white outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full text-sm rounded-2xl border border-gray-200 dark:border-gray-600 px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600"
           />
-          <p className="mt-1 text-[11px] text-gray-400">Enter để gửi, Shift+Enter để xuống dòng</p>
+          <p className="mt-1 text-[11px] text-gray-400 dark:text-gray-500">Enter để gửi, Shift+Enter để xuống dòng</p>
         </div>
       </div>
     </section>
@@ -264,10 +264,10 @@ export function CommentSectionSkeleton() {
     <div className="mt-2 space-y-3 animate-pulse">
       {[0, 1, 2].map((i) => (
         <div key={i} className="flex items-start gap-2">
-          <div className="w-8 h-8 rounded-full bg-gray-200 mt-0.5" />
+          <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 mt-0.5" />
           <div className="flex-1 space-y-2">
-            <div className="h-4 bg-gray-100 rounded w-2/3" />
-            <div className="h-4 bg-gray-100 rounded w-1/2" />
+            <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded w-2/3" />
+            <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded w-1/2" />
           </div>
         </div>
       ))}
