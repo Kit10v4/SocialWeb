@@ -170,17 +170,17 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-50">
+      <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center gap-3">
           <Link
             to="/"
-            className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition"
+            className="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition"
           >
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
+            <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
           </Link>
-          <h1 className="text-lg font-semibold text-gray-800">Cài đặt</h1>
+          <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Cài đặt</h1>
         </div>
       </header>
 
@@ -188,15 +188,15 @@ export default function SettingsPage() {
         <div className="flex flex-col md:flex-row gap-6">
           {/* Left sidebar - menu */}
           <nav className="md:w-64 shrink-0">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
               {menuItems.map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
                   onClick={() => setActiveSection(id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition ${
                     activeSection === id
-                      ? "bg-blue-50 text-blue-600 font-medium"
-                      : "text-gray-700 hover:bg-gray-50"
+                      ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                   }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -210,29 +210,29 @@ export default function SettingsPage() {
           <div className="flex-1">
             {/* Account Section */}
             {activeSection === "account" && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h2 className="text-lg font-semibold text-gray-800 mb-6">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+                <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-6">
                   Thông tin tài khoản
                 </h2>
 
                 {/* Current email */}
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Email hiện tại
                   </label>
-                  <div className="text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg">
+                  <div className="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 px-3 py-2 rounded-lg">
                     {maskEmail(user?.email)}
                   </div>
                 </div>
 
                 {/* Change email form */}
                 <form onSubmit={handleEmailChange}>
-                  <h3 className="text-sm font-medium text-gray-800 mb-3">
+                  <h3 className="text-sm font-medium text-gray-800 dark:text-gray-100 mb-3">
                     Đổi email
                   </h3>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm text-gray-600 mb-1">
+                      <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
                         Email mới
                       </label>
                       <input
@@ -241,12 +241,12 @@ export default function SettingsPage() {
                         onChange={(e) =>
                           setEmailForm({ ...emailForm, new_email: e.target.value })
                         }
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                         placeholder="example@email.com"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm text-gray-600 mb-1">
+                      <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
                         Xác nhận mật khẩu
                       </label>
                       <input
@@ -255,7 +255,7 @@ export default function SettingsPage() {
                         onChange={(e) =>
                           setEmailForm({ ...emailForm, password: e.target.value })
                         }
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                         placeholder="Nhập mật khẩu hiện tại"
                       />
                     </div>
@@ -274,19 +274,19 @@ export default function SettingsPage() {
 
             {/* Security Section */}
             {activeSection === "security" && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h2 className="text-lg font-semibold text-gray-800 mb-6">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+                <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-6">
                   Bảo mật
                 </h2>
 
                 <form onSubmit={handlePasswordChange}>
-                  <h3 className="text-sm font-medium text-gray-800 mb-3">
+                  <h3 className="text-sm font-medium text-gray-800 dark:text-gray-100 mb-3">
                     Đổi mật khẩu
                   </h3>
                   <div className="space-y-4">
                     {/* Current password */}
                     <div>
-                      <label className="block text-sm text-gray-600 mb-1">
+                      <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
                         Mật khẩu hiện tại
                       </label>
                       <div className="relative">
@@ -299,7 +299,7 @@ export default function SettingsPage() {
                               current_password: e.target.value,
                             })
                           }
-                          className="w-full px-3 py-2 pr-10 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                          className="w-full px-3 py-2 pr-10 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                           placeholder="Nhập mật khẩu hiện tại"
                         />
                         <button
@@ -310,7 +310,7 @@ export default function SettingsPage() {
                               current: !showPasswords.current,
                             })
                           }
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                         >
                           {showPasswords.current ? (
                             <EyeOff className="w-4 h-4" />
@@ -323,7 +323,7 @@ export default function SettingsPage() {
 
                     {/* New password */}
                     <div>
-                      <label className="block text-sm text-gray-600 mb-1">
+                      <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
                         Mật khẩu mới
                       </label>
                       <div className="relative">
@@ -336,7 +336,7 @@ export default function SettingsPage() {
                               new_password: e.target.value,
                             })
                           }
-                          className="w-full px-3 py-2 pr-10 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                          className="w-full px-3 py-2 pr-10 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                           placeholder="Nhập mật khẩu mới"
                         />
                         <button
@@ -347,7 +347,7 @@ export default function SettingsPage() {
                               new: !showPasswords.new,
                             })
                           }
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                         >
                           {showPasswords.new ? (
                             <EyeOff className="w-4 h-4" />
@@ -360,7 +360,7 @@ export default function SettingsPage() {
                       {passwordForm.new_password && (
                         <div className="mt-2">
                           <div className="flex items-center gap-2">
-                            <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                            <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                               <div
                                 className={`h-full transition-all ${passwordStrength.color}`}
                                 style={{
@@ -386,7 +386,7 @@ export default function SettingsPage() {
 
                     {/* Confirm password */}
                     <div>
-                      <label className="block text-sm text-gray-600 mb-1">
+                      <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
                         Xác nhận mật khẩu mới
                       </label>
                       <div className="relative">
@@ -399,7 +399,7 @@ export default function SettingsPage() {
                               confirm_password: e.target.value,
                             })
                           }
-                          className="w-full px-3 py-2 pr-10 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                          className="w-full px-3 py-2 pr-10 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                           placeholder="Nhập lại mật khẩu mới"
                         />
                         <button
@@ -410,7 +410,7 @@ export default function SettingsPage() {
                               confirm: !showPasswords.confirm,
                             })
                           }
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                         >
                           {showPasswords.confirm ? (
                             <EyeOff className="w-4 h-4" />
@@ -442,14 +442,14 @@ export default function SettingsPage() {
 
             {/* Appearance Section */}
             {activeSection === "appearance" && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h2 className="text-lg font-semibold text-gray-800 mb-6">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+                <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-6">
                   Giao diện
                 </h2>
 
                 {/* Theme toggle */}
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                     Chế độ hiển thị
                   </label>
                   <div className="flex gap-3">
@@ -457,8 +457,8 @@ export default function SettingsPage() {
                       onClick={() => setTheme("light")}
                       className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition ${
                         theme === "light"
-                          ? "border-blue-500 bg-blue-50 text-blue-600"
-                          : "border-gray-200 text-gray-600 hover:border-gray-300"
+                          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                          : "border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500"
                       }`}
                     >
                       <Sun className="w-5 h-5" />
@@ -468,8 +468,8 @@ export default function SettingsPage() {
                       onClick={() => setTheme("dark")}
                       className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg border-2 transition ${
                         theme === "dark"
-                          ? "border-blue-500 bg-blue-50 text-blue-600"
-                          : "border-gray-200 text-gray-600 hover:border-gray-300"
+                          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                          : "border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500"
                       }`}
                     >
                       <Moon className="w-5 h-5" />
@@ -480,7 +480,7 @@ export default function SettingsPage() {
 
                 {/* Language selector */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                     Ngôn ngữ
                   </label>
                   <div className="flex gap-3">
@@ -488,8 +488,8 @@ export default function SettingsPage() {
                       onClick={() => setLanguage("vi")}
                       className={`flex-1 px-4 py-3 rounded-lg border-2 text-sm font-medium transition ${
                         language === "vi"
-                          ? "border-blue-500 bg-blue-50 text-blue-600"
-                          : "border-gray-200 text-gray-600 hover:border-gray-300"
+                          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                          : "border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500"
                       }`}
                     >
                       Tiếng Việt
@@ -498,14 +498,14 @@ export default function SettingsPage() {
                       onClick={() => setLanguage("en")}
                       className={`flex-1 px-4 py-3 rounded-lg border-2 text-sm font-medium transition ${
                         language === "en"
-                          ? "border-blue-500 bg-blue-50 text-blue-600"
-                          : "border-gray-200 text-gray-600 hover:border-gray-300"
+                          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                          : "border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500"
                       }`}
                     >
                       English
                     </button>
                   </div>
-                  <p className="text-xs text-gray-400 mt-2">
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
                     Tính năng đổi ngôn ngữ sẽ sớm được cập nhật
                   </p>
                 </div>
@@ -513,11 +513,11 @@ export default function SettingsPage() {
             )}
 
             {/* Delete Account Section - Always visible at bottom */}
-            <div className="mt-6 bg-white rounded-xl shadow-sm border border-red-100 p-6">
-              <h2 className="text-lg font-semibold text-red-600 mb-2">
+            <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-red-100 dark:border-red-900/50 p-6">
+              <h2 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">
                 Xoá tài khoản
               </h2>
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                 Sau khi xoá, tất cả dữ liệu của bạn sẽ bị xoá vĩnh viễn và không thể khôi phục.
               </p>
               <button
@@ -533,29 +533,29 @@ export default function SettingsPage() {
 
       {/* Delete Account Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2 text-red-600">
+              <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
                 <AlertTriangle className="w-5 h-5" />
                 <h3 className="font-semibold">Xác nhận xoá tài khoản</h3>
               </div>
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="p-1 hover:bg-gray-100 rounded-full transition"
+                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition"
               >
-                <X className="w-5 h-5 text-gray-500" />
+                <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
               </button>
             </div>
 
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
               Hành động này không thể hoàn tác. Toàn bộ bài viết, tin nhắn và dữ liệu của bạn sẽ bị xoá vĩnh viễn.
             </p>
 
             <form onSubmit={handleDeleteAccount}>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">
+                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
                     Nhập <span className="font-semibold">{user?.username}</span> để xác nhận
                   </label>
                   <input
@@ -564,12 +564,12 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       setDeleteForm({ ...deleteForm, username: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
+                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
                     placeholder="Nhập username"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">
+                  <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
                     Mật khẩu
                   </label>
                   <input
@@ -578,7 +578,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       setDeleteForm({ ...deleteForm, password: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
+                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
                     placeholder="Nhập mật khẩu"
                   />
                 </div>
@@ -587,7 +587,7 @@ export default function SettingsPage() {
                   <button
                     type="button"
                     onClick={() => setShowDeleteModal(false)}
-                    className="flex-1 px-4 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition"
+                    className="flex-1 px-4 py-2 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                   >
                     Huỷ
                   </button>

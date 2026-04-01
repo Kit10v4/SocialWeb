@@ -112,19 +112,19 @@ export default function CreatePostModal({
 
   return (
     <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm sm:p-4"
+      className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-sm sm:p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget && !isSubmitting) onClose?.();
       }}
     >
-      <div className="w-full h-full sm:h-auto sm:max-w-xl sm:max-h-[90vh] rounded-none sm:rounded-2xl bg-white shadow-xl p-4 sm:p-6 overflow-y-auto">
+      <div className="w-full h-full sm:h-auto sm:max-w-xl sm:max-h-[90vh] rounded-none sm:rounded-2xl bg-white dark:bg-gray-800 shadow-xl p-4 sm:p-6 overflow-y-auto">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold">Tạo bài viết</h2>
+          <h2 className="text-lg font-semibold dark:text-gray-100">Tạo bài viết</h2>
           <button
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="p-1.5 rounded-full hover:bg-gray-100 text-gray-500 disabled:opacity-50"
+            className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 disabled:opacity-50"
           >
             <span className="sr-only">Đóng</span>
             <svg
@@ -144,13 +144,13 @@ export default function CreatePostModal({
           {/* Privacy selector */}
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-full bg-gray-200" />
+              <div className="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700" />
               <div>
-                <div className="h-3 w-20 bg-gray-200 rounded mb-1" />
+                <div className="h-3 w-20 bg-gray-200 dark:bg-gray-700 rounded mb-1" />
                 <select
                   value={privacy}
                   onChange={(e) => setPrivacy(e.target.value)}
-                  className="text-xs px-2 py-1 rounded-md border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="text-xs px-2 py-1 rounded-md border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="Public">Công khai</option>
                   <option value="Friends">Bạn bè</option>
@@ -169,18 +169,18 @@ export default function CreatePostModal({
               placeholder="Bạn đang nghĩ gì?"
               maxLength={maxLength}
               rows={3}
-              className="w-full resize-none border-none outline-none text-sm sm:text-base placeholder:text-gray-400 bg-transparent"
+              className="w-full resize-none border-none outline-none text-sm sm:text-base placeholder:text-gray-400 dark:placeholder:text-gray-500 bg-transparent dark:text-gray-100"
             />
-            <div className="absolute bottom-0 right-0 text-xs text-gray-400">
+            <div className="absolute bottom-0 right-0 text-xs text-gray-400 dark:text-gray-500">
               {charsUsed}/{maxLength}
             </div>
           </div>
 
           {/* Image previews */}
           {previews.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 rounded-lg border border-gray-200 p-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 rounded-lg border border-gray-200 dark:border-gray-700 p-2">
               {previews.map((url, idx) => (
-                <div key={idx} className="relative group aspect-square overflow-hidden rounded-md bg-gray-100">
+                <div key={idx} className="relative group aspect-square overflow-hidden rounded-md bg-gray-100 dark:bg-gray-700">
                   <img
                     src={url}
                     alt={`preview-${idx}`}
@@ -209,17 +209,17 @@ export default function CreatePostModal({
 
           {/* Error */}
           {error && (
-            <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-md px-2 py-1.5">
+            <p className="text-xs text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-900/50 rounded-md px-2 py-1.5">
               {error}
             </p>
           )}
 
-          <div className="border-t border-gray-200 pt-3 flex items-center justify-between gap-3">
-            <label className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-sm cursor-pointer">
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-3 flex items-center justify-between gap-3">
+            <label className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-sm cursor-pointer">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
-                className="w-5 h-5 text-green-500"
+                className="w-5 h-5 text-green-500 dark:text-green-400"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.5"
@@ -230,7 +230,7 @@ export default function CreatePostModal({
                   d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0L16.5 16.5m0 0l2.591-2.591a2.25 2.25 0 013.182 0l.977.977M16.5 16.5L14.25 18.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <span className="hidden sm:inline">Ảnh</span>
+              <span className="hidden sm:inline dark:text-gray-200">Ảnh</span>
               <input
                 type="file"
                 accept="image/*"
@@ -256,15 +256,15 @@ export default function CreatePostModal({
 
 export function CreatePostModalSkeleton() {
   return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-xl rounded-2xl bg-white shadow-xl p-4 sm:p-6 animate-pulse space-y-4">
-        <div className="h-5 w-32 bg-gray-200 rounded" />
+    <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/40 dark:bg-black/60">
+      <div className="w-full max-w-xl rounded-2xl bg-white dark:bg-gray-800 shadow-xl p-4 sm:p-6 animate-pulse space-y-4">
+        <div className="h-5 w-32 bg-gray-200 dark:bg-gray-700 rounded" />
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-gray-200" />
-          <div className="h-3 w-24 bg-gray-200 rounded" />
+          <div className="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700" />
+          <div className="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded" />
         </div>
-        <div className="h-20 bg-gray-100 rounded" />
-        <div className="h-10 bg-gray-100 rounded" />
+        <div className="h-20 bg-gray-100 dark:bg-gray-700 rounded" />
+        <div className="h-10 bg-gray-100 dark:bg-gray-700 rounded" />
       </div>
     </div>
   );
