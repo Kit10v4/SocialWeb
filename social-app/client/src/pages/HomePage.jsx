@@ -317,7 +317,7 @@ export default function HomePage() {
           <div className="flex items-center gap-3">
             <NotificationBell />
             <Link to="/messages" className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
-              <MessageCircle className="w-5 h-5" />
+              <MessageCircle className="w-5 h-5 text-gray-600 dark:text-gray-300" />
               {unreadCount > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-semibold flex items-center justify-center">
                   {unreadCount > 9 ? "9+" : unreadCount}

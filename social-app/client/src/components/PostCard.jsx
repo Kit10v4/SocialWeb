@@ -433,7 +433,7 @@ export default function PostCard({
           />
           <div className="min-w-0">
             <div className="flex items-center gap-1">
-              <p className="font-semibold text-sm sm:text-base hover:underline truncate">
+              <p className="font-semibold text-sm sm:text-base text-gray-900 dark:text-gray-100 hover:underline truncate">
                 {post.author?.username}
               </p>
             </div>
@@ -499,7 +499,7 @@ export default function PostCard({
         <div className="mb-3">
           <p
             ref={contentRef}
-            className={`text-sm sm:text-base whitespace-pre-wrap ${
+            className={`text-sm sm:text-base text-gray-800 dark:text-gray-100 whitespace-pre-wrap ${
               showContentFull ? "max-h-none" : "max-h-20 overflow-hidden"
             }`}
           >
