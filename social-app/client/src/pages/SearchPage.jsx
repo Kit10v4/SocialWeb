@@ -164,24 +164,24 @@ export default function SearchPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-20 md:pb-0">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-950 pb-20 md:pb-0">
       <PageHeader title="Tìm kiếm" />
       <div className="max-w-2xl mx-auto px-4 py-8 sm:py-10">
         {/* Search bar */}
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500 pointer-events-none" />
           <input
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             type="text"
             placeholder="Tìm kiếm theo tên hoặc nội dung bài viết..."
-            className="w-full pl-12 pr-10 py-3.5 bg-white border border-gray-200 rounded-2xl text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+            className="w-full pl-12 pr-10 py-3.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 rounded-2xl text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
           />
           {query && (
             <button
               onClick={() => setQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 h-7 w-7 flex items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
+              className="absolute right-3 top-1/2 -translate-y-1/2 h-7 w-7 flex items-center justify-center rounded-full text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300 transition"
             >
               <X className="h-4 w-4" />
             </button>
@@ -196,7 +196,7 @@ export default function SearchPage() {
             className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
               activeTab === TABS.USERS
                 ? "bg-blue-600 text-white"
-                : "bg-white text-gray-600 border border-gray-200"
+                : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700"
             }`}
           >
             Mọi người
@@ -207,7 +207,7 @@ export default function SearchPage() {
             className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
               activeTab === TABS.POSTS
                 ? "bg-blue-600 text-white"
-                : "bg-white text-gray-600 border border-gray-200"
+                : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700"
             }`}
           >
             Bài viết
@@ -225,14 +225,14 @@ export default function SearchPage() {
               )}
 
               {!isSearchingUsers && !searchedUsers && (
-                <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                <div className="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-500">
                   <Search className="h-12 w-12 mb-3 opacity-30" />
                   <p className="font-medium">Nhập ít nhất 2 ký tự để tìm kiếm</p>
                 </div>
               )}
 
               {!isSearchingUsers && searchedUsers && userResults.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                <div className="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-500">
                   <Search className="h-12 w-12 mb-3 opacity-30" />
                   <p className="font-medium">Không tìm thấy kết quả cho "{query}"</p>
                 </div>
@@ -240,7 +240,7 @@ export default function SearchPage() {
 
               {!isSearchingUsers && userResults.length > 0 && (
                 <div className="flex flex-col gap-2">
-                  <p className="text-xs text-gray-400 font-medium mb-1 px-1">
+                  <p className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-1 px-1">
                     {userResults.length} kết quả
                   </p>
                   {userResults.map((user) => (
@@ -265,14 +265,14 @@ export default function SearchPage() {
               )}
 
               {!isSearchingPosts && !searchedPosts && (
-                <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                <div className="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-500">
                   <Search className="h-12 w-12 mb-3 opacity-30" />
                   <p className="font-medium">Nhập ít nhất 2 ký tự để tìm bài viết</p>
                 </div>
               )}
 
               {!isSearchingPosts && searchedPosts && postResults.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+                <div className="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-500">
                   <Search className="h-12 w-12 mb-3 opacity-30" />
                   <p className="font-medium">Không tìm thấy kết quả cho "{query}"</p>
                 </div>
@@ -297,7 +297,7 @@ export default function SearchPage() {
 // ── UserResultCard ─────────────────────────────────────────────────────────
 function UserResultCard({ user, requestState, onAddFriend }) {
   return (
-    <div className="flex items-center gap-3 bg-white border border-gray-100 rounded-2xl px-4 py-3 shadow-sm hover:shadow-md transition-shadow">
+    <div className="flex items-center gap-3 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl px-4 py-3 shadow-sm hover:shadow-md transition-shadow">
       {/* Avatar */}
       <Link to={`/profile/${user.username}`} className="flex-shrink-0">
         <div className="h-12 w-12 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-indigo-500 shadow-sm">
@@ -319,7 +319,7 @@ function UserResultCard({ user, requestState, onAddFriend }) {
       <div className="flex-1 min-w-0">
         <Link
           to={`/profile/${user.username}`}
-          className="font-semibold text-gray-900 hover:text-blue-600 transition-colors text-sm truncate block"
+          className="font-semibold text-gray-900 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-sm truncate block"
         >
           {user.username}
         </Link>
@@ -334,7 +334,7 @@ function UserResultCard({ user, requestState, onAddFriend }) {
 function AddFriendButton({ state, onClick }) {
   if (state === "sent") {
     return (
-      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 text-gray-500 text-xs font-semibold cursor-default select-none">
+      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs font-semibold cursor-default select-none">
         <UserCheck className="h-3.5 w-3.5" />
         Đã gửi
       </div>
@@ -343,7 +343,7 @@ function AddFriendButton({ state, onClick }) {
 
   if (state === "sending") {
     return (
-      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-400 text-xs font-semibold cursor-default select-none">
+      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-400 dark:text-blue-300 text-xs font-semibold cursor-default select-none">
         <Loader2 className="h-3.5 w-3.5 animate-spin" />
         Đang gửi...
       </div>

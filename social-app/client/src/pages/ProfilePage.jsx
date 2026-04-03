@@ -330,7 +330,7 @@ export default function ProfilePage() {
   // ── Loading / error states ─────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
       </div>
     );
@@ -338,9 +338,9 @@ export default function ProfilePage() {
 
   if (error || !profile) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-gray-100">
-        <p className="text-gray-500 text-lg">{error || "Người dùng không tồn tại."}</p>
-        <Link to="/" className="text-blue-600 hover:underline text-sm">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-gray-100 dark:bg-gray-900">
+        <p className="text-gray-500 dark:text-gray-400 text-lg">{error || "Người dùng không tồn tại."}</p>
+        <Link to="/" className="text-blue-600 dark:text-blue-400 hover:underline text-sm">
           ← Về trang chủ
         </Link>
       </div>

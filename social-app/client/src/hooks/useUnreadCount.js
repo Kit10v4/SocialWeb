@@ -8,7 +8,7 @@ export function useUnreadCount() {
       const res = await chatAPI.getUnreadCount();
       return res.data?.count ?? 0;
     },
-    refetchInterval: 30000,
+    staleTime: 5 * 60 * 1000, // cache 5 phút, không poll
   });
 
   return { unreadCount: data ?? 0 };
