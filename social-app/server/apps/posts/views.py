@@ -3,7 +3,7 @@ from django.utils.decorators import method_decorator
 from typing import Any
 from rest_framework import generics, serializers as drf_serializers, status
 
-from ratelimit.decorators import ratelimit
+from django_ratelimit.decorators import ratelimit
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response

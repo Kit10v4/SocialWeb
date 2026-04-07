@@ -5,7 +5,7 @@ from django.utils.decorators import method_decorator
 from typing import Any
 from rest_framework import generics, status
 
-from ratelimit.decorators import ratelimit
+from django_ratelimit.decorators import ratelimit
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
