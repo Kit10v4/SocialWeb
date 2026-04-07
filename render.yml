@@ -31,9 +31,9 @@ services:
       - key: CLOUDINARY_API_SECRET
         sync: false
       - key: CORS_ALLOWED_ORIGINS
-        value: "https://your-frontend.vercel.app"
+        value: "https://fbfake.vercel.app"
       - key: CSRF_TRUSTED_ORIGINS
-        value: "https://social-app-api-p54k.onrender.com,https://social-app-api.onrender.com,https://your-frontend.vercel.app"
+        value: "https://social-app-api-p54k.onrender.com,https://social-app-api.onrender.com,https://fbfake.vercel.app"
       - key: REDIS_URL
         sync: false
 
