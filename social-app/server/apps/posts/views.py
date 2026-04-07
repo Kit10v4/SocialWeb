@@ -1,15 +1,9 @@
-from django.db.models import Q
+from django.db.models import Count, Exists, OuterRef, Q
 from django.utils.decorators import method_decorator
+from typing import Any
 from rest_framework import generics, serializers as drf_serializers, status
 
-try:
-    from ratelimit.decorators import ratelimit
-except Exception:  # pragma: no cover - fallback if ratelimit isn't installed
-    def ratelimit(*args, **kwargs):
-        def decorator(view_func):
-            return view_func
-
-        return decorator
+from ratelimit.decorators import ratelimit
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -32,7 +26,7 @@ from .serializers import (
 # ===========================================================================
 
 @method_decorator(
-    ratelimit(key="ip", rate="20/m", method="POST", block=True),
+    ratelimit(key="user", rate="20/m", method="POST", block=True),
     name="dispatch",
 )
 class PostListCreateView(generics.ListCreateAPIView):
@@ -44,12 +38,12 @@ class PostListCreateView(generics.ListCreateAPIView):
     permission_classes = (IsAuthenticated,)
     parser_classes = (MultiPartParser, FormParser)
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> Any:
         if self.request.method == "POST":
             return CreatePostSerializer
         return PostSerializer
 
-    def get_queryset(self):
+    def get_queryset(self) -> Any:
         user = self.request.user
         # Public posts, friends' posts, or own posts
         from apps.users.models import Friendship
@@ -65,13 +59,22 @@ class PostListCreateView(generics.ListCreateAPIView):
             friends.update(pair)
         friends.discard(user.pk)
 
-        return Post.objects.filter(
+        qs = Post.objects.filter(
             Q(privacy="public")
             | Q(author=user)
             | Q(author_id__in=friends, privacy__in=["public", "friends"])
         ).select_related("author").prefetch_related("images", "likes", "comments")
 
-    def perform_create(self, serializer):
+        # Annotate is_liked and is_saved to avoid N+1
+        qs = qs.annotate(
+            like_count=Count("likes", distinct=True),
+            comment_count=Count("comments", distinct=True),
+            is_liked=Exists(Like.objects.filter(post=OuterRef("pk"), user=user)),
+            is_saved=Exists(SavedPost.objects.filter(post=OuterRef("pk"), user=user)),
+        )
+        return qs
+
+    def perform_create(self, serializer: Any) -> None:
         serializer.save(author=self.request.user)
 
 
@@ -85,12 +88,12 @@ class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (IsAuthenticated, IsOwnerOrReadOnly)
     lookup_field = "pk"
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> Any:
         if self.request.method in ("PUT", "PATCH"):
             return UpdatePostSerializer
         return PostSerializer
 
-    def get_queryset(self):
+    def get_queryset(self) -> Any:
         return Post.objects.select_related("author").prefetch_related(
             "images", "likes", "comments"
         )
@@ -108,7 +111,7 @@ class PostSearchView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     serializer_class = PostSerializer
 
-    def get_queryset(self):
+    def get_queryset(self) -> Any:
         user = self.request.user
         q = (self.request.query_params.get("q") or "").strip()
         if not q:
@@ -152,7 +155,7 @@ class LikeToggleView(APIView):
 
     permission_classes = (IsAuthenticated,)
 
-    def post(self, request, pk):
+    def post(self, request: Any, pk: str) -> Response:
         post = Post.objects.filter(pk=pk).first()
         if not post:
             return Response({"detail": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -180,12 +183,12 @@ class CommentListCreateView(generics.ListCreateAPIView):
 
     permission_classes = (IsAuthenticated,)
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> Any:
         if self.request.method == "POST":
             return CreateCommentSerializer
         return CommentSerializer
 
-    def get_queryset(self):
+    def get_queryset(self) -> Any:
         # Only top-level comments (parent=None), replies are nested
         return (
             Comment.objects.filter(post_id=self.kwargs["pk"], parent=None)
@@ -193,7 +196,7 @@ class CommentListCreateView(generics.ListCreateAPIView):
             .prefetch_related("replies__author")
         )
 
-    def perform_create(self, serializer):
+    def perform_create(self, serializer: Any) -> None:
         post = Post.objects.filter(pk=self.kwargs["pk"]).first()
         if not post:
             raise drf_serializers.ValidationError("Post not found.")
@@ -212,7 +215,7 @@ class CommentDeleteView(APIView):
 
     permission_classes = (IsAuthenticated,)
 
-    def delete(self, request, pk):
+    def delete(self, request: Any, pk: str) -> Response:
         comment = Comment.objects.select_related("post__author").filter(pk=pk).first()
         if not comment:
             return Response({"detail": "Comment not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -239,7 +242,7 @@ class SaveToggleView(APIView):
 
     permission_classes = (IsAuthenticated,)
 
-    def post(self, request, pk):
+    def post(self, request: Any, pk: str) -> Response:
         post = Post.objects.filter(pk=pk).first()
         if not post:
             return Response({"detail": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -264,10 +267,19 @@ class SavedPostListView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     serializer_class = PostSerializer
 
-    def get_queryset(self):
-        saved_post_ids = SavedPost.objects.filter(user=self.request.user).values_list(
+    def get_queryset(self) -> Any:
+        user = self.request.user
+        saved_post_ids = SavedPost.objects.filter(user=user).values_list(
             "post_id", flat=True
         )
-        return Post.objects.filter(pk__in=saved_post_ids).select_related("author").prefetch_related(
+        qs = Post.objects.filter(pk__in=saved_post_ids).select_related("author").prefetch_related(
             "images", "likes", "comments"
         )
+        # Annotate is_liked and is_saved to avoid N+1
+        qs = qs.annotate(
+            like_count=Count("likes", distinct=True),
+            comment_count=Count("comments", distinct=True),
+            is_liked=Exists(Like.objects.filter(post=OuterRef("pk"), user=user)),
+            is_saved=Exists(SavedPost.objects.filter(post=OuterRef("pk"), user=user)),
+        )
+        return qs

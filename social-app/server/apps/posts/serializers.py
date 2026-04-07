@@ -1,5 +1,7 @@
 from rest_framework import serializers
 import bleach
+from PIL import Image
+from typing import Any
 
 from apps.users.serializers import UserMiniSerializer
 
@@ -52,7 +54,7 @@ class CommentSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ("id", "author", "replies", "reply_count", "created_at")
 
-    def get_reply_count(self, obj):
+    def get_reply_count(self, obj: Comment) -> int:
         return obj.replies.count()
 
 
@@ -63,7 +65,7 @@ class CreateCommentSerializer(serializers.ModelSerializer):
         model = Comment
         fields = ("content", "parent")
 
-    def validate_parent(self, value):
+    def validate_parent(self, value: Comment | None) -> Comment | None:
         if value is not None:
             # Ensure parent belongs to the same post (set in view)
             # and is not itself a reply (1 level only)
@@ -72,6 +74,12 @@ class CreateCommentSerializer(serializers.ModelSerializer):
                     "Cannot reply to a reply. Only 1 level of nesting allowed."
                 )
         return value
+
+    def validate_content(self, value: str) -> str:
+        content = (value or "").strip()
+        if not content:
+            raise serializers.ValidationError("Comment content cannot be empty.")
+        return bleach.clean(content, tags=[], attributes={}, strip=True)
 
 
 # ---------------------------------------------------------------------------
@@ -109,19 +117,19 @@ class PostSerializer(serializers.ModelSerializer):
 
     # -- computed fields ---------------------------------------------------
 
-    def get_like_count(self, obj):
+    def get_like_count(self, obj: Post) -> int:
         # Prefer annotated value when available to avoid extra queries
         if hasattr(obj, "like_count"):
             return obj.like_count
         return obj.likes.count()
 
-    def get_comment_count(self, obj):
+    def get_comment_count(self, obj: Post) -> int:
         # Prefer annotated value when available to avoid extra queries
         if hasattr(obj, "comment_count"):
             return obj.comment_count
         return obj.comments.count()
 
-    def get_is_liked(self, obj):
+    def get_is_liked(self, obj: Post) -> bool:
         request = self.context.get("request")
         if not request or not request.user.is_authenticated:
             return False
@@ -130,10 +138,13 @@ class PostSerializer(serializers.ModelSerializer):
             return bool(obj.is_liked)
         return obj.likes.filter(user=request.user).exists()
 
-    def get_is_saved(self, obj):
+    def get_is_saved(self, obj: Post) -> bool:
         request = self.context.get("request")
         if not request or not request.user.is_authenticated:
             return False
+        # Use annotated flag when provided by queryset
+        if hasattr(obj, "is_saved"):
+            return bool(obj.is_saved)
         return obj.saves.filter(user=request.user).exists()
 
 
@@ -151,9 +162,10 @@ class CreatePostSerializer(serializers.ModelSerializer):
         model = Post
         fields = ("content", "images", "privacy")
 
-    def validate_images(self, images):
+    def validate_images(self, images: list[Any]) -> list[Any]:
         max_size = 5 * 1024 * 1024  # 5MB
         allowed_types = {"image/jpeg", "image/png", "image/webp"}
+        allowed_formats = {"JPEG", "PNG", "WEBP"}
         for img in images or []:
             content_type = getattr(img, "content_type", "")
             size = getattr(img, "size", 0)
@@ -163,9 +175,23 @@ class CreatePostSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     "Unsupported image type. Only JPG, PNG, WEBP are allowed."
                 )
+            try:
+                image = Image.open(img)
+                image.verify()
+                if image.format not in allowed_formats:
+                    raise serializers.ValidationError(
+                        "Unsupported image type. Only JPG, PNG, WEBP are allowed."
+                    )
+                img.seek(0)
+            except serializers.ValidationError:
+                raise
+            except Exception:
+                raise serializers.ValidationError(
+                    "Invalid image file. Please upload a valid JPG, PNG, or WEBP image."
+                )
         return images
 
-    def validate(self, data):
+    def validate(self, data: dict[str, Any]) -> dict[str, Any]:
         content = data.get("content", "") or ""
         content = content.strip()
         images = data.get("images", [])
@@ -188,14 +214,14 @@ class CreatePostSerializer(serializers.ModelSerializer):
 
         return data
 
-    def create(self, validated_data):
+    def create(self, validated_data: dict[str, Any]) -> Post:
         images = validated_data.pop("images", [])
         post = Post.objects.create(**validated_data)
         for idx, img_file in enumerate(images):
             PostImage.objects.create(post=post, image=img_file, order=idx)
         return post
 
-    def update(self, instance, validated_data):
+    def update(self, instance: Post, validated_data: dict[str, Any]) -> Post:
         images = validated_data.pop("images", None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -217,7 +243,7 @@ class UpdatePostSerializer(serializers.ModelSerializer):
         model = Post
         fields = ("content", "privacy")
 
-    def validate_content(self, value):
+    def validate_content(self, value: str) -> str:
         # If clearing content, ensure there are images
         if not value.strip() and not self.instance.images.exists():
             raise serializers.ValidationError(

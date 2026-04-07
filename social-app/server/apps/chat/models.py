@@ -17,6 +17,8 @@ class Conversation(models.Model):
 
     class Meta:
         ordering = ["-updated_at"]
+        verbose_name = "conversation"
+        verbose_name_plural = "conversations"
 
     def __str__(self):
         names = ", ".join(u.username for u in self.participants.all()[:3])
@@ -48,6 +50,8 @@ class Message(models.Model):
 
     class Meta:
         ordering = ["created_at"]
+        verbose_name = "message"
+        verbose_name_plural = "messages"
 
     def __str__(self):
         base = self.content or "[attachment]"

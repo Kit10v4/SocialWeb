@@ -58,7 +58,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             if not text and message_type == "text":
                 return
 
-            message = await self._create_message(text, message_type)
+            message, recipient_ids = await self._create_message(text, message_type)
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
@@ -66,6 +66,18 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                     "message": message,
                 },
             )
+
+            # Notify recipients via their personal notification group
+            # so frontend can invalidate unread count
+            for recipient_id in recipient_ids:
+                await self.channel_layer.group_send(
+                    f"user_{recipient_id}",
+                    {
+                        "type": "new_message",
+                        "conversation_id": str(self.conversation_id),
+                        "sender_id": str(self.user.pk),
+                    },
+                )
 
         elif event_type == "typing_indicator":
             is_typing = bool(content.get("is_typing", True))
@@ -173,7 +185,13 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             content=content,
             message_type=message_type or Message.MessageType.TEXT,
         )
-        return self._serialize_message(message)
+
+        # Get recipient IDs (all participants except sender)
+        recipient_ids = list(
+            conversation.participants.exclude(pk=self.user.pk).values_list("pk", flat=True)
+        )
+
+        return self._serialize_message(message), recipient_ids
 
     @database_sync_to_async
     def _mark_read(self) -> int:

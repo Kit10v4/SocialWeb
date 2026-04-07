@@ -27,6 +27,8 @@ class Post(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        verbose_name = "post"
+        verbose_name_plural = "posts"
         indexes = [
             models.Index(fields=["author", "created_at"]),
             models.Index(fields=["created_at"]),
@@ -46,6 +48,8 @@ class PostImage(models.Model):
 
     class Meta:
         ordering = ["order"]
+        verbose_name = "post image"
+        verbose_name_plural = "post images"
 
     def __str__(self):
         return f"Image {self.order} for post {self.post_id}"
@@ -63,6 +67,8 @@ class Like(models.Model):
 
     class Meta:
         unique_together = ("post", "user")
+        verbose_name = "like"
+        verbose_name_plural = "likes"
         indexes = [
             models.Index(fields=["post", "created_at"]),
         ]
@@ -87,6 +93,8 @@ class Comment(models.Model):
 
     class Meta:
         ordering = ["created_at"]
+        verbose_name = "comment"
+        verbose_name_plural = "comments"
         indexes = [
             models.Index(fields=["post", "created_at"]),
         ]
@@ -108,6 +116,8 @@ class SavedPost(models.Model):
     class Meta:
         unique_together = ("user", "post")
         ordering = ["-created_at"]
+        verbose_name = "saved post"
+        verbose_name_plural = "saved posts"
 
     def __str__(self):
         return f"{self.user.username} saved {self.post_id}"

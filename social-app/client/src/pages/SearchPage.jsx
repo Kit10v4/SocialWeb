@@ -233,7 +233,9 @@ export default function SearchPage() {
 
               {!isSearchingUsers && searchedUsers && userResults.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-500">
-                  <Search className="h-12 w-12 mb-3 opacity-30" />
+                  <div className="mb-3 h-14 w-14 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                    <Search className="h-7 w-7 text-blue-600 dark:text-blue-300" />
+                  </div>
                   <p className="font-medium">Không tìm thấy kết quả cho "{query}"</p>
                 </div>
               )}
@@ -273,7 +275,9 @@ export default function SearchPage() {
 
               {!isSearchingPosts && searchedPosts && postResults.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-500">
-                  <Search className="h-12 w-12 mb-3 opacity-30" />
+                  <div className="mb-3 h-14 w-14 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                    <Search className="h-7 w-7 text-blue-600 dark:text-blue-300" />
+                  </div>
                   <p className="font-medium">Không tìm thấy kết quả cho "{query}"</p>
                 </div>
               )}

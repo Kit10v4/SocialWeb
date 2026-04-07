@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Camera,
   Pencil,
@@ -12,7 +12,6 @@ import {
   FileText,
   Image,
   Users,
-  Loader2,
   MessageCircle,
   CheckCircle,
   XCircle,
@@ -22,6 +21,7 @@ import {
   Ban,
   X,
   ArrowLeft,
+  Loader2,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useProfile } from "../hooks/useProfile";
@@ -33,6 +33,7 @@ import PostCard, { PostCardSkeleton } from "../components/PostCard";
 import ImageViewer from "../components/ImageViewer";
 import BottomNav from "../components/shared/BottomNav";
 import PageHeader from "../components/shared/PageHeader";
+import { ProfilePageSkeleton } from "../components/Skeletons";
 
 // ── Tab constants ──────────────────────────────────────────────────────────
 const TABS = { POSTS: "posts", PHOTOS: "photos", FRIENDS: "friends" };
@@ -99,21 +100,44 @@ export default function ProfilePage() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // ── Fetch user posts ──────────────────────────────────────────────────
+  // ── Fetch user posts with infinite scroll ──────────────────────────────
   const {
     data: postsData,
     isLoading: postsLoading,
     isError: postsError,
-  } = useQuery({
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: ["user-posts", username],
-    queryFn: async () => {
-      const res = await profileAPI.getUserPosts(username);
-      return Array.isArray(res.data) ? res.data : res.data.results ?? [];
+    queryFn: async ({ pageParam }) => {
+      const res = await profileAPI.getUserPosts(username, { cursor: pageParam });
+      return res.data;
     },
+    getNextPageParam: (lastPage) => lastPage?.next_cursor ?? undefined,
     enabled: !!username && !!profile,
   });
 
-  const posts = postsData || [];
+  const posts = useMemo(() => {
+    if (!postsData?.pages) return [];
+    return postsData.pages.flatMap((page) => page.results ?? []);
+  }, [postsData]);
+
+  // IntersectionObserver for infinite scroll
+  const postsEndRef = useRef(null);
+  useEffect(() => {
+    if (!postsEndRef.current || !hasNextPage || isFetchingNextPage) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(postsEndRef.current);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Extract all photos from posts
   const allPhotos = useMemo(() => {
@@ -139,13 +163,19 @@ export default function ProfilePage() {
       const previous = queryClient.getQueryData(["user-posts", username]);
 
       queryClient.setQueryData(["user-posts", username], (old) => {
-        if (!old) return old;
-        return old.map((post) => {
-          if (post.id !== postId) return post;
-          const nextLiked = !post.is_liked;
-          const nextCount = (post.like_count || 0) + (nextLiked ? 1 : -1);
-          return { ...post, is_liked: nextLiked, like_count: nextCount };
-        });
+        if (!old?.pages) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            results: (page.results ?? []).map((post) => {
+              if (post.id !== postId) return post;
+              const nextLiked = !post.is_liked;
+              const nextCount = (post.like_count || 0) + (nextLiked ? 1 : -1);
+              return { ...post, is_liked: nextLiked, like_count: nextCount };
+            }),
+          })),
+        };
       });
 
       return { previous };
@@ -172,11 +202,17 @@ export default function ProfilePage() {
       const previous = queryClient.getQueryData(["user-posts", username]);
 
       queryClient.setQueryData(["user-posts", username], (old) => {
-        if (!old) return old;
-        return old.map((post) => {
-          if (post.id !== postId) return post;
-          return { ...post, is_saved: !post.is_saved };
-        });
+        if (!old?.pages) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            results: (page.results ?? []).map((post) => {
+              if (post.id !== postId) return post;
+              return { ...post, is_saved: !post.is_saved };
+            }),
+          })),
+        };
       });
 
       return { previous };
@@ -329,11 +365,7 @@ export default function ProfilePage() {
 
   // ── Loading / error states ─────────────────────────────────────────────
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-      </div>
-    );
+    return <ProfilePageSkeleton />;
   }
 
   if (error || !profile) {
@@ -508,6 +540,13 @@ export default function ProfilePage() {
                     onBookmark={handleBookmark}
                   />
                 ))}
+                {/* Sentinel for infinite scroll */}
+                <div ref={postsEndRef} className="h-4" />
+                {isFetchingNextPage && (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+                  </div>
+                )}
               </div>
             )}
           </>

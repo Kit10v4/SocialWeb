@@ -38,7 +38,6 @@ function formatMessage(n) {
   }
 }
 
-const UNREAD_KEY = "notifications_unread_count";
 const GROUP_WINDOW_MS = 10 * 60 * 1000;
 
 function getNotificationLink(n) {
@@ -183,11 +182,8 @@ export default function NotificationBell() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(() => {
-    const saved = localStorage.getItem(UNREAD_KEY);
-    const parsed = Number(saved);
-    return Number.isFinite(parsed) ? parsed : 0;
-  });
+  // No longer use localStorage - fetch from API on mount and update via WebSocket
+  const [unreadCount, setUnreadCount] = useState(0);
   const socketRef = useRef(null);
   const reconnectAttemptsRef = useRef(0);
   const reconnectTimeoutRef = useRef(null);
@@ -206,12 +202,9 @@ export default function NotificationBell() {
   useEffect(() => {
     if (!user) {
       setUnreadCount(0);
-      localStorage.removeItem(UNREAD_KEY);
       setOpen(false);
-      return;
     }
-    localStorage.setItem(UNREAD_KEY, String(unreadCount));
-  }, [unreadCount, user]);
+  }, [user]);
 
   // Initial unread count
   useEffect(() => {
@@ -279,6 +272,9 @@ export default function NotificationBell() {
             setUnreadCount((c) => c + 1);
           } else if (data.type === "list" && Array.isArray(data.notifications)) {
             queryClient.setQueryData(["notifications", "latest"], data.notifications);
+          } else if (data.type === "new_message") {
+            // New chat message received — invalidate unread count query
+            queryClient.invalidateQueries({ queryKey: ["unread-count"] });
           }
         } catch {
           // ignore
@@ -392,8 +388,11 @@ export default function NotificationBell() {
 
         <div className="max-h-80 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700">
           {groupedList.length === 0 && (
-            <div className="px-4 py-6 text-xs text-gray-400 dark:text-gray-500 text-center">
-              Chưa có thông báo.
+            <div className="px-4 py-8 text-center">
+              <div className="mx-auto mb-2 h-12 w-12 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                <Bell className="h-6 w-6 text-blue-600 dark:text-blue-300" />
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Bạn chưa có thông báo nào</p>
             </div>
           )}
 

@@ -1,30 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
 import { useAuth } from "../context/AuthContext";
-import { commentAPI, postAPI } from "../services/api";
+import { postAPI } from "../services/api";
+import { useComments } from "../hooks/useComments";
 import PostCard, { PostCardSkeleton } from "../components/PostCard";
 import CommentSection from "../components/CommentSection";
 import PageHeader from "../components/shared/PageHeader";
 import NotFoundPage from "./NotFoundPage";
-
-function transformComment(comment) {
-  if (!comment) return null;
-  return {
-    id: comment.id,
-    content: comment.content,
-    createdAt: comment.created_at,
-    author: {
-      id: comment.author?.id,
-      name: comment.author?.username,
-      avatarUrl: comment.author?.avatar,
-    },
-    replies: Array.isArray(comment.replies)
-      ? comment.replies.map(transformComment).filter(Boolean)
-      : [],
-  };
-}
 
 export default function PostDetailPage() {
   const { postId } = useParams();
@@ -45,66 +29,23 @@ export default function PostDetailPage() {
     enabled: !!postId,
   });
 
+  // Use the comments hook - fetch immediately for detail page
   const {
-    data: commentsData,
+    transformedComments,
     isLoading: isCommentsLoading,
-    isError: isCommentsError,
     error: commentsError,
-  } = useQuery({
-    queryKey: ["post-comments", postId],
-    queryFn: async () => {
-      const res = await commentAPI.list(postId, { page_size: 1000 });
-      return Array.isArray(res.data) ? res.data : res.data.results ?? [];
-    },
-    enabled: !!postId,
-  });
+    submitComment,
+    deleteComment,
+    fetchComments,
+    fetched,
+  } = useComments(postId);
 
-  const [comments, setComments] = useState([]);
-
+  // Auto-fetch comments when postId is available (detail page shows all comments)
   useEffect(() => {
-    setComments(Array.isArray(commentsData) ? commentsData : []);
-  }, [commentsData]);
-
-  const transformedComments = useMemo(
-    () => comments.map(transformComment).filter(Boolean),
-    [comments]
-  );
-
-  const handleSubmitComment = async (text, parentId = null) => {
-    if (!postId) return;
-    const res = await commentAPI.create(postId, { content: text, parent: parentId });
-    const newComment = res.data;
-    if (parentId) {
-      setComments((prev) =>
-        prev.map((c) =>
-          c.id === parentId ? { ...c, replies: [...(c.replies || []), newComment] } : c
-        )
-      );
-    } else {
-      setComments((prev) => [newComment, ...prev]);
+    if (postId && !fetched) {
+      fetchComments();
     }
-  };
-
-  const handleDeleteComment = async (commentId) => {
-    await commentAPI.delete(commentId);
-    let wasTopLevel = false;
-    setComments((prev) => {
-      const filtered = prev.filter((c) => {
-        if (c.id === commentId) {
-          wasTopLevel = true;
-          return false;
-        }
-        return true;
-      });
-      if (!wasTopLevel) {
-        return filtered.map((c) => ({
-          ...c,
-          replies: (c.replies || []).filter((r) => r.id !== commentId),
-        }));
-      }
-      return filtered;
-    });
-  };
+  }, [postId, fetched, fetchComments]);
 
   if (isPostError && postError?.response?.status === 404) {
     return <NotFoundPage />;
@@ -144,10 +85,10 @@ export default function PostDetailPage() {
                 comments={transformedComments}
                 currentUserId={user?.id}
                 currentUserAvatar={user?.avatar}
-                onSubmitComment={handleSubmitComment}
-                onDeleteComment={handleDeleteComment}
+                onSubmitComment={submitComment}
+                onDeleteComment={deleteComment}
                 isLoading={isCommentsLoading}
-                error={isCommentsError ? commentsError?.message : ""}
+                error={commentsError}
                 showAll
               />
             </div>

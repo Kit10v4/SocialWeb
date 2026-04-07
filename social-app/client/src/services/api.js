@@ -101,7 +101,10 @@ export const profileAPI = {
   search: (q, options = {}) =>
     api.get(`/users/search/?q=${encodeURIComponent(q)}`, options),
   getSuggestions: () => api.get("/users/suggestions/"),
-  getUserPosts: (username) => api.get(`/users/${username}/posts/`),
+  getUserPosts: (username, { cursor } = {}) =>
+    api.get(`/users/${username}/posts/`, {
+      params: cursor ? { cursor } : undefined,
+    }),
 };
 
 // ── Friends API helpers ───────────────────────────────────────────────
@@ -144,7 +147,7 @@ export const feedAPI = {
     api.get("/feed/", {
       params: cursor ? { cursor } : undefined,
     }),
-  getStories: () => api.get("/feed/stories/"),
+  getActiveFriends: () => api.get("/feed/active-friends/"),
   getTrending: () => api.get("/posts/trending/"),
 };
 

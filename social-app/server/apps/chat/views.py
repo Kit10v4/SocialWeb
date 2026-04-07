@@ -1,4 +1,5 @@
-from django.db.models import Q
+from django.db.models import Count, Prefetch, Q
+from typing import Any
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -15,16 +16,29 @@ class ConversationListCreateView(APIView):
 
     permission_classes = (IsAuthenticated,)
 
-    def get(self, request):
+    def get(self, request: Any) -> Response:
+        user = request.user
+        # Prefetch messages for last_message, ordered by newest first
+        messages_prefetch = Prefetch(
+            "messages",
+            queryset=Message.objects.select_related("sender").order_by("-created_at"),
+            to_attr="prefetched_messages",
+        )
         qs = (
-            Conversation.objects.filter(participants=request.user)
-            .prefetch_related("participants")
+            Conversation.objects.filter(participants=user)
+            .prefetch_related("participants", messages_prefetch)
+            .annotate(
+                unread_count=Count(
+                    "messages",
+                    filter=Q(messages__is_read=False) & ~Q(messages__sender=user),
+                )
+            )
             .order_by("-updated_at")
         )
         serializer = ConversationSerializer(qs, many=True, context={"request": request})
         return Response(serializer.data)
 
-    def post(self, request):
+    def post(self, request: Any) -> Response:
         other_id = request.data.get("user_id")
         if not other_id:
             return Response(
@@ -62,7 +76,7 @@ class MessageListView(generics.ListAPIView):
     permission_classes = (IsAuthenticated,)
     serializer_class = MessageSerializer
 
-    def get_queryset(self):
+    def get_queryset(self) -> Any:
         user = self.request.user
         conv_id = self.kwargs["pk"]
 
@@ -84,7 +98,7 @@ class ConversationMarkReadView(APIView):
 
     permission_classes = (IsAuthenticated,)
 
-    def post(self, request, pk):
+    def post(self, request: Any, pk: str) -> Response:
         user = request.user
 
         try:
@@ -104,7 +118,7 @@ class ConversationMarkReadView(APIView):
 class UnreadCountView(APIView):
     permission_classes = (IsAuthenticated,)
 
-    def get(self, request):
+    def get(self, request: Any) -> Response:
         count = (
             Message.objects.filter(
                 conversation__participants=request.user,

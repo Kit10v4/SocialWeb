@@ -56,6 +56,19 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
         count = await self._get_unread_count()
         await self.send_json({"type": "unread_count", "count": count})
 
+    async def new_message(self, event):
+        """Broadcasted when a new chat message is received (from ChatConsumer).
+
+        This allows the frontend to invalidate the unread count query.
+        """
+        await self.send_json(
+            {
+                "type": "new_message",
+                "conversation_id": event.get("conversation_id"),
+                "sender_id": event.get("sender_id"),
+            }
+        )
+
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------

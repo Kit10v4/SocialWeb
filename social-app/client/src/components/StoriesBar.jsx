@@ -23,7 +23,7 @@ export default function StoriesBar() {
   } = useQuery({
     queryKey: ["feed", "stories"],
     queryFn: async () => {
-      const res = await feedAPI.getStories();
+      const res = await feedAPI.getActiveFriends();
       return Array.isArray(res.data) ? res.data : [];
     },
   });

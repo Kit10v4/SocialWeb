@@ -1,9 +1,9 @@
 from django.urls import path
 
-from .views import FeedStoriesView, FeedView, TrendingPostsView
+from .views import FeedActiveFriendsView, FeedView, TrendingPostsView
 
 urlpatterns = [
     path("feed/", FeedView.as_view(), name="feed"),
-    path("feed/stories/", FeedStoriesView.as_view(), name="feed-stories"),
+    path("feed/active-friends/", FeedActiveFriendsView.as_view(), name="feed-active-friends"),
     path("posts/trending/", TrendingPostsView.as_view(), name="posts-trending"),
 ]

@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.db.models import Q
+from typing import Any
 from rest_framework import serializers
 
 from .models import Friendship, User
@@ -16,28 +17,28 @@ class RegisterSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, min_length=8)
     password_confirm = serializers.CharField(write_only=True)
 
-    def validate_email(self, value):
+    def validate_email(self, value: str) -> str:
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("A user with this email already exists.")
         return value.lower()
 
-    def validate_username(self, value):
+    def validate_username(self, value: str) -> str:
         if User.objects.filter(username=value).exists():
             raise serializers.ValidationError("This username is already taken.")
         return value
 
-    def validate_password(self, value):
+    def validate_password(self, value: str) -> str:
         validate_password(value)
         return value
 
-    def validate(self, data):
+    def validate(self, data: dict[str, Any]) -> dict[str, Any]:
         if data["password"] != data["password_confirm"]:
             raise serializers.ValidationError(
                 {"password_confirm": "Passwords do not match."}
             )
         return data
 
-    def create(self, validated_data):
+    def create(self, validated_data: dict[str, Any]) -> User:
         validated_data.pop("password_confirm")
         return User.objects.create_user(**validated_data)
 
@@ -46,7 +47,7 @@ class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
 
-    def validate(self, data):
+    def validate(self, data: dict[str, Any]) -> dict[str, Any]:
         user = authenticate(email=data["email"], password=data["password"])
         if user is None:
             raise serializers.ValidationError("Invalid email or password.")
@@ -95,16 +96,16 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     # -- computed fields -----------------------------------------------------
 
-    def get_friends_count(self, obj):
+    def get_friends_count(self, obj: User) -> int:
         return (
             obj.friendships_sent.filter(status="accepted").count()
             + obj.friendships_received.filter(status="accepted").count()
         )
 
-    def get_posts_count(self, obj):
+    def get_posts_count(self, obj: User) -> int:
         return obj.posts.count()
 
-    def get_friendship_status(self, obj):
+    def get_friendship_status(self, obj: User) -> str:
         """
         Return the friendship status between the *request user* and *obj*.
         Possible values: "self", "accepted", "pending", "sent", "none".
@@ -137,7 +138,7 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = ("username", "bio", "avatar", "cover_photo", "date_of_birth")
 
-    def _validate_image(self, image):
+    def _validate_image(self, image: Any) -> Any:
         if not image:
             return image
         max_size = 5 * 1024 * 1024  # 5MB
@@ -152,13 +153,13 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
             )
         return image
 
-    def validate_avatar(self, value):
+    def validate_avatar(self, value: Any) -> Any:
         return self._validate_image(value)
 
-    def validate_cover_photo(self, value):
+    def validate_cover_photo(self, value: Any) -> Any:
         return self._validate_image(value)
 
-    def validate_username(self, value):
+    def validate_username(self, value: str) -> str:
         user = self.instance
         if User.objects.filter(username=value).exclude(pk=user.pk).exists():
             raise serializers.ValidationError("This username is already taken.")

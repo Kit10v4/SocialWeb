@@ -4,6 +4,7 @@ import { formatDistanceToNowStrict, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
 
 import { useAuth } from "../context/AuthContext";
+import { ConversationListSkeleton } from "./Skeletons";
 
 function formatTime(dateString) {
   if (!dateString) return "";
@@ -77,13 +78,7 @@ export default function ConversationList({
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {loading && (
-          <div className="p-3 space-y-2 animate-pulse">
-            <div className="h-12 bg-gray-100 dark:bg-gray-700 rounded-xl" />
-            <div className="h-12 bg-gray-100 dark:bg-gray-700 rounded-xl" />
-            <div className="h-12 bg-gray-100 dark:bg-gray-700 rounded-xl" />
-          </div>
-        )}
+        {loading && <ConversationListSkeleton />}
 
         {error && !loading && (
           <div className="p-3 text-xs text-red-500 dark:text-red-400">Không thể tải danh sách chat.</div>
@@ -122,9 +117,9 @@ function ConversationItem({ conversation, active, onlineUsers, onClick }) {
   const time = formatTime(last?.created_at || conversation.updated_at);
   const isOnline = others.some((p) => onlineUsers?.has?.(String(p.id)));
 
-  // Very naive unread badge: 1 if last message is unread and from other user
-  const unreadCount =
-    active || !last || last.is_read || last.sender?.id === user?.id ? 0 : 1;
+  // Use actual unread_count from backend (annotated in ConversationListCreateView)
+  // Reset to 0 when this conversation is active
+  const unreadCount = active ? 0 : conversation.unread_count ?? 0;
 
   return (
     <li
@@ -161,7 +156,7 @@ function ConversationItem({ conversation, active, onlineUsers, onClick }) {
           <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[160px]">{preview}</p>
           {unreadCount > 0 && (
             <span className="flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-semibold">
-              {unreadCount}
+              {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
         </div>

@@ -5,8 +5,15 @@ from django.http import JsonResponse
 
 
 def health_check(request):
-    """Health check endpoint for UptimeRobot to keep Render server alive."""
-    return JsonResponse({"status": "ok"})
+    """Health check endpoint with database status."""
+    db_status = "ok"
+    try:
+        from django.db import connection
+
+        connection.ensure_connection()
+    except Exception:
+        db_status = "error"
+    return JsonResponse({"status": "ok", "database": db_status})
 
 
 urlpatterns = [

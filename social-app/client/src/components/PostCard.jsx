@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Heart, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { commentAPI, postAPI } from "../services/api";
+import { postAPI } from "../services/api";
 import { useToast } from "./shared/Toast";
+import { useComments } from "../hooks/useComments";
 import ImageViewer from "./ImageViewer";
 import CommentSection from "./CommentSection";
 import EditPostModal from "./EditPostModal";
@@ -74,28 +75,6 @@ function normalizeImages(images) {
 }
 
 /**
- * Transform API comment to CommentSection format
- * API: { author: { avatar, username }, created_at, replies: [...] }
- * UI:  { author: { avatarUrl, name, id }, createdAt, replies: [...] }
- */
-function transformComment(comment) {
-  if (!comment) return null;
-  return {
-    id: comment.id,
-    content: comment.content,
-    createdAt: comment.created_at,
-    author: {
-      id: comment.author?.id,
-      name: comment.author?.username,
-      avatarUrl: comment.author?.avatar,
-    },
-    replies: Array.isArray(comment.replies)
-      ? comment.replies.map(transformComment).filter(Boolean)
-      : [],
-  };
-}
-
-/**
  * PostCard
  *
  * Props (API format from Django):
@@ -135,6 +114,17 @@ export default function PostCard({
   const { showToast } = useToast();
   const navigate = useNavigate();
 
+  // Use the comments hook
+  const {
+    transformedComments,
+    isLoading: commentsLoading,
+    error: commentsError,
+    fetched: commentsFetched,
+    fetchComments,
+    submitComment,
+    deleteComment,
+  } = useComments(post?.id);
+
   const [localLiked, setLocalLiked] = useState(post?.is_liked || false);
   const [localLikeCount, setLocalLikeCount] = useState(post?.like_count || 0);
   const [localCommentCount, setLocalCommentCount] = useState(post?.comment_count || 0);
@@ -156,10 +146,6 @@ export default function PostCard({
 
   // Comment section states
   const [showComments, setShowComments] = useState(false);
-  const [comments, setComments] = useState([]);
-  const [commentsLoading, setCommentsLoading] = useState(false);
-  const [commentsError, setCommentsError] = useState("");
-  const [commentsFetched, setCommentsFetched] = useState(false);
 
   const contentRef = (node) => {
     if (!node) return;
@@ -214,30 +200,6 @@ export default function PostCard({
 
   // Normalize images from API format to URL strings
   const imageUrls = useMemo(() => normalizeImages(post?.images), [post?.images]);
-
-  // Transform comments for CommentSection
-  const transformedComments = useMemo(
-    () => comments.map(transformComment).filter(Boolean),
-    [comments]
-  );
-
-  // Fetch comments when section is opened (lazy load)
-  const fetchComments = async () => {
-    if (!post?.id) return;
-    setCommentsLoading(true);
-    setCommentsError("");
-    try {
-      const res = await commentAPI.list(post.id);
-      const data = Array.isArray(res.data) ? res.data : res.data.results ?? [];
-      setComments(data);
-      setCommentsFetched(true);
-    } catch (err) {
-      const message = err?.response?.data?.detail || err?.message || "Không thể tải bình luận.";
-      setCommentsError(message);
-    } finally {
-      setCommentsLoading(false);
-    }
-  };
 
   const handleLike = async () => {
     if (!post || likeBusy) return;
@@ -348,64 +310,21 @@ export default function PostCard({
     }
   };
 
-  // Submit comment handler
+  // Submit comment handler - wraps the hook's method and updates local count
   const handleSubmitComment = async (text, parentId = null) => {
-    if (!post?.id) return;
-
-    const res = await commentAPI.create(post.id, {
-      content: text,
-      parent: parentId,
-    });
-
-    const newComment = res.data;
-
-    if (parentId) {
-      // Add reply to existing comment
-      setComments((prev) =>
-        prev.map((c) => {
-          if (c.id === parentId) {
-            return {
-              ...c,
-              replies: [...(c.replies || []), newComment],
-            };
-          }
-          return c;
-        })
-      );
-    } else {
-      // Add new top-level comment
-      setComments((prev) => [newComment, ...prev]);
+    const wasTopLevel = !parentId;
+    await submitComment(text, parentId);
+    if (wasTopLevel) {
       setLocalCommentCount((c) => c + 1);
     }
   };
 
-  // Delete comment handler
+  // Delete comment handler - wraps the hook's method and updates local count
   const handleDeleteComment = async (commentId) => {
-    await commentAPI.delete(commentId);
-
-    // Remove from state (check both top-level and replies)
-    let wasTopLevel = false;
-    setComments((prev) => {
-      const filtered = prev.filter((c) => {
-        if (c.id === commentId) {
-          wasTopLevel = true;
-          return false;
-        }
-        return true;
-      });
-
-      // If not found at top level, remove from replies
-      if (!wasTopLevel) {
-        return filtered.map((c) => ({
-          ...c,
-          replies: (c.replies || []).filter((r) => r.id !== commentId),
-        }));
-      }
-
-      return filtered;
-    });
-
-    if (wasTopLevel) {
+    // Check if it's a top-level comment before deleting
+    const isTopLevel = transformedComments.some((c) => String(c.id) === String(commentId));
+    await deleteComment(commentId);
+    if (isTopLevel) {
       setLocalCommentCount((c) => Math.max(0, c - 1));
     }
   };

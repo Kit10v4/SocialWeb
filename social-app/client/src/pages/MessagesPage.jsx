@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, X } from "lucide-react";
+import { ArrowLeft, MessageCircle, X } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
 import { chatAPI } from "../services/api";
@@ -104,8 +104,22 @@ export default function MessagesPage() {
                 <ChatBox conversation={selected} />
               </div>
             ) : (
-              <div className="h-full flex items-center justify-center bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500">
-                Chọn một cuộc trò chuyện để bắt đầu.
+              <div className="h-full flex items-center justify-center bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                <div className="text-center px-6 py-10">
+                  <div className="mx-auto mb-3 h-14 w-14 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                    <MessageCircle className="h-7 w-7 text-blue-600 dark:text-blue-300" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                    Chọn một cuộc trò chuyện hoặc bắt đầu chat mới
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setIsSearchOpen(true)}
+                    className="mt-3 inline-flex items-center rounded-full bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5"
+                  >
+                    Bắt đầu chat mới
+                  </button>
+                </div>
               </div>
             )}
           </div>

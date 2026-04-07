@@ -45,3 +45,6 @@ urllib3==2.6.3
 webencodings==0.5.1
 zope.interface==8.2
 whitenoise==6.8.2
+django-ratelimit==4.1.0
+channels-redis==4.2.0
+redis==5.0.1

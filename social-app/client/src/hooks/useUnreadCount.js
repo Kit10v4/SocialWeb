@@ -8,7 +8,7 @@ export function useUnreadCount() {
       const res = await chatAPI.getUnreadCount();
       return res.data?.count ?? 0;
     },
-    staleTime: 5 * 60 * 1000, // cache 5 phút, không poll
+    staleTime: 30 * 1000, // 30 seconds — WebSocket will invalidate on new messages
   });
 
   return { unreadCount: data ?? 0 };

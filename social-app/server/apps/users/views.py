@@ -2,16 +2,10 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Exists, OuterRef, Q
 from django.utils.decorators import method_decorator
+from typing import Any
 from rest_framework import generics, status
 
-try:
-    from ratelimit.decorators import ratelimit
-except Exception:  # pragma: no cover - fallback if ratelimit isn't installed
-    def ratelimit(*args, **kwargs):
-        def decorator(view_func):
-            return view_func
-
-        return decorator
+from ratelimit.decorators import ratelimit
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -20,7 +14,7 @@ from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, Bl
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from apps.posts.models import Like, Post
+from apps.posts.models import Like, Post, SavedPost
 from apps.posts.serializers import PostSerializer
 
 from .models import Friendship, Report, User
@@ -39,7 +33,7 @@ from .utils import resize_image
 # Auth views (unchanged)
 # ===========================================================================
 
-def _get_tokens(user):
+def _get_tokens(user: Any) -> dict[str, str]:
     refresh = RefreshToken.for_user(user)
     return {"access": str(refresh.access_token), "refresh": str(refresh)}
 
@@ -51,7 +45,7 @@ def _get_tokens(user):
 class RegisterView(APIView):
     permission_classes = (AllowAny,)
 
-    def post(self, request):
+    def post(self, request: Any) -> Response:
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
@@ -69,7 +63,7 @@ class RegisterView(APIView):
 class LoginView(APIView):
     permission_classes = (AllowAny,)
 
-    def post(self, request):
+    def post(self, request: Any) -> Response:
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
@@ -87,7 +81,7 @@ class CustomTokenRefreshView(TokenRefreshView):
 class LogoutView(APIView):
     permission_classes = (IsAuthenticated,)
 
-    def post(self, request):
+    def post(self, request: Any) -> Response:
         refresh_token = request.data.get("refresh")
         if not refresh_token:
             return Response({"detail": "Refresh token is required."},
@@ -104,7 +98,7 @@ class ChangePasswordView(APIView):
     """POST /api/auth/change-password/ — change user's password."""
     permission_classes = (IsAuthenticated,)
 
-    def post(self, request):
+    def post(self, request: Any) -> Response:
         user = request.user
         current_password = request.data.get("current_password")
         new_password = request.data.get("new_password")
@@ -165,7 +159,7 @@ class ChangeEmailView(APIView):
     """POST /api/auth/change-email/ — change user's email."""
     permission_classes = (IsAuthenticated,)
 
-    def post(self, request):
+    def post(self, request: Any) -> Response:
         user = request.user
         new_email = request.data.get("new_email", "").strip().lower()
         password = request.data.get("password")
@@ -205,7 +199,7 @@ class DeleteAccountView(APIView):
     """DELETE /api/auth/delete-account/ — permanently delete user account."""
     permission_classes = (IsAuthenticated,)
 
-    def delete(self, request):
+    def delete(self, request: Any) -> Response:
         user = request.user
         password = request.data.get("password")
 
@@ -241,7 +235,7 @@ class MeView(generics.RetrieveUpdateAPIView):
     permission_classes = (IsAuthenticated,)
     serializer_class = UserProfileSerializer
 
-    def get_object(self):
+    def get_object(self) -> Any:
         return self.request.user
 
 
@@ -260,7 +254,7 @@ class UpdateMyProfileView(APIView):
     """PUT /api/users/me/ — update own profile (bio, avatar, cover, birthday)."""
     permission_classes = (IsAuthenticated,)
 
-    def put(self, request):
+    def put(self, request: Any) -> Response:
         user = request.user
         data = request.data.copy()
 
@@ -282,7 +276,7 @@ class UserSearchView(generics.ListAPIView):
     """GET /api/users/search/?q=keyword — search by username or email."""
     serializer_class = UserMiniSerializer
 
-    def get_queryset(self):
+    def get_queryset(self) -> Any:
         q = self.request.query_params.get("q", "").strip()
         if len(q) < 2:
             return User.objects.none()
@@ -296,7 +290,7 @@ class SuggestionsView(generics.ListAPIView):
     """GET /api/users/suggestions/ — users not yet friends, random order."""
     serializer_class = UserMiniSerializer
 
-    def get_queryset(self):
+    def get_queryset(self) -> Any:
         me = self.request.user
         # IDs of everyone I have *any* relationship with
         related_ids = set(
@@ -319,7 +313,7 @@ class SuggestionsView(generics.ListAPIView):
 # Friendship views
 # ===========================================================================
 
-def _get_friendship(user_a, user_b):
+def _get_friendship(user_a: Any, user_b: Any) -> Any:
     """Return the Friendship row between two users (either direction) or None."""
     return Friendship.objects.filter(
         Q(from_user=user_a, to_user=user_b)
@@ -331,7 +325,7 @@ class SendFriendRequestView(APIView):
     """POST /api/friends/request/<user_id>/"""
     permission_classes = (IsAuthenticated,)
 
-    def post(self, request, user_id):
+    def post(self, request: Any, user_id: str) -> Response:
         if str(request.user.pk) == str(user_id):
             return Response({"detail": "You cannot send a friend request to yourself."},
                             status=status.HTTP_400_BAD_REQUEST)
@@ -357,7 +351,7 @@ class AcceptFriendRequestView(APIView):
     """POST /api/friends/accept/<user_id>/ — accept request FROM user_id."""
     permission_classes = (IsAuthenticated,)
 
-    def post(self, request, user_id):
+    def post(self, request: Any, user_id: str) -> Response:
         friendship = Friendship.objects.filter(
             from_user_id=user_id, to_user=request.user, status="pending"
         ).first()
@@ -374,7 +368,7 @@ class RejectFriendRequestView(APIView):
     """POST /api/friends/reject/<user_id>/ — reject / cancel request."""
     permission_classes = (IsAuthenticated,)
 
-    def post(self, request, user_id):
+    def post(self, request: Any, user_id: str) -> Response:
         friendship = Friendship.objects.filter(
             Q(from_user_id=user_id, to_user=request.user)
             | Q(from_user=request.user, to_user_id=user_id),
@@ -392,7 +386,7 @@ class UnfriendView(APIView):
     """DELETE /api/friends/<user_id>/ — remove an existing friendship."""
     permission_classes = (IsAuthenticated,)
 
-    def delete(self, request, user_id):
+    def delete(self, request: Any, user_id: str) -> Response:
         friendship = Friendship.objects.filter(
             Q(from_user=request.user, to_user_id=user_id)
             | Q(from_user_id=user_id, to_user=request.user),
@@ -410,7 +404,7 @@ class FriendListView(generics.ListAPIView):
     """GET /api/friends/ — list current user's accepted friends."""
     serializer_class = UserMiniSerializer
 
-    def get_queryset(self):
+    def get_queryset(self) -> Any:
         me = self.request.user
         sent_ids = Friendship.objects.filter(
             from_user=me, status="accepted"
@@ -425,7 +419,7 @@ class FriendRequestListView(generics.ListAPIView):
     """GET /api/friends/requests/ — pending requests sent TO me."""
     serializer_class = FriendshipSerializer
 
-    def get_queryset(self):
+    def get_queryset(self) -> Any:
         return Friendship.objects.filter(
             to_user=self.request.user, status="pending"
         ).select_related("from_user", "to_user")
@@ -435,25 +429,27 @@ class FriendRequestListView(generics.ListAPIView):
 # User Posts view
 # ===========================================================================
 
-class UserPostsView(generics.ListAPIView):
+class UserPostsView(APIView):
     """
-    GET /api/users/<username>/posts/ — list posts of a specific user.
+    GET /api/users/<username>/posts/ — list posts of a specific user with cursor pagination.
 
     Privacy rules:
     - Public posts: visible to everyone
     - Friends posts: visible only if viewer is friends with author
     - Private posts: visible only to author themselves
     """
-    serializer_class = PostSerializer
+    permission_classes = (IsAuthenticated,)
+    page_size = 10
 
-    def get_queryset(self):
-        username = self.kwargs.get("username")
+    def get(self, request: Any, username: str) -> Response:
+        from django.utils.dateparse import parse_datetime
+
         target_user = User.objects.filter(username=username, is_active=True).first()
 
         if not target_user:
-            return Post.objects.none()
+            return Response({"results": [], "next_cursor": None})
 
-        viewer = self.request.user if self.request.user.is_authenticated else None
+        viewer = request.user if request.user.is_authenticated else None
         is_own_profile = viewer and viewer.pk == target_user.pk
 
         # Base queryset for target user's posts
@@ -490,10 +486,32 @@ class UserPostsView(generics.ListAPIView):
             qs = qs.annotate(
                 is_liked=Exists(
                     Like.objects.filter(post=OuterRef("pk"), user=viewer)
-                )
+                ),
+                is_saved=Exists(
+                    SavedPost.objects.filter(post=OuterRef("pk"), user=viewer)
+                ),
             )
 
-        return qs.order_by("-created_at")
+        qs = qs.order_by("-created_at", "-id")
+
+        # Cursor-based pagination
+        cursor = request.query_params.get("cursor")
+        if cursor:
+            dt = parse_datetime(cursor)
+            if dt is not None:
+                qs = qs.filter(created_at__lt=dt)
+
+        items = list(qs[: self.page_size + 1])
+        has_next = len(items) > self.page_size
+        items = items[: self.page_size]
+
+        next_cursor = None
+        if has_next and items:
+            last = items[-1]
+            next_cursor = last.created_at.isoformat()
+
+        serializer = PostSerializer(items, many=True, context={"request": request})
+        return Response({"results": serializer.data, "next_cursor": next_cursor})
 
 
 # ===========================================================================
@@ -504,7 +522,7 @@ class ReportUserView(APIView):
     """POST /api/reports/ — report a user."""
     permission_classes = (IsAuthenticated,)
 
-    def post(self, request):
+    def post(self, request: Any) -> Response:
         target_id = request.data.get('target_user')
         reason = request.data.get('reason', 'other')
         detail = request.data.get('detail', '')
