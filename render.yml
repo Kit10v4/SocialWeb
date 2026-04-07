@@ -2,12 +2,8 @@ services:
   - type: web
     name: social-app-api
     env: python
-    rootDir: server # thư mục chứa manage.py và requirements.txt
-    buildCommand: |
-      pip install --upgrade pip
-      pip install -r requirements.txt
-      python manage.py collectstatic --noinput
-      python manage.py migrate --noinput
+    rootDir: social-app/server
+    buildCommand: pip install --upgrade pip && pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate --noinput
     startCommand: daphne config.asgi:application -b 0.0.0.0 -p $PORT
     plan: free
     autoDeploy: true
