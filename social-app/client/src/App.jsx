@@ -13,6 +13,9 @@ const SearchPage = lazy(() => import("./pages/SearchPage"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const PostDetailPage = lazy(() => import("./pages/PostDetailPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const VerifyEmailPage = lazy(() => import("./pages/VerifyEmailPage"));
+const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
 
 // Loading spinner component
 function PageLoader() {
@@ -55,6 +58,23 @@ export default function App() {
           element={
             <GuestRoute>
               <RegisterForm />
+            </GuestRoute>
+          }
+        />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route
+          path="/forgot-password"
+          element={
+            <GuestRoute>
+              <ForgotPasswordPage />
+            </GuestRoute>
+          }
+        />
+        <Route
+          path="/reset-password"
+          element={
+            <GuestRoute>
+              <ResetPasswordPage />
             </GuestRoute>
           }
         />

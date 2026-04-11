@@ -5,25 +5,17 @@ const API_URL = import.meta.env.VITE_API_URL || "/api";
 const api = axios.create({
   baseURL: API_URL,
   headers: { 'Content-Type': 'application/json', },
-});
-
-// ── Request interceptor: attach access token ──────────────────────────
-api.interceptors.request.use((config) => {
-  const access = localStorage.getItem("access_token");
-  if (access) {
-    config.headers.Authorization = `Bearer ${access}`;
-  }
-  return config;
+  withCredentials: true,
 });
 
 // ── Response interceptor: auto-refresh on 401 ────────────────────────
 let isRefreshing = false;
 let failedQueue = [];
 
-const processQueue = (error, token = null) => {
+const processQueue = (error) => {
   failedQueue.forEach(({ resolve, reject }) => {
     if (error) reject(error);
-    else resolve(token);
+    else resolve();
   });
   failedQueue = [];
 };
@@ -37,39 +29,28 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const refresh = localStorage.getItem("refresh_token");
-    if (!refresh) {
-      return Promise.reject(error);
-    }
-
     if (isRefreshing) {
       // Queue concurrent requests while refreshing
       return new Promise((resolve, reject) => {
         failedQueue.push({ resolve, reject });
-      }).then((token) => {
-        originalRequest.headers.Authorization = `Bearer ${token}`;
-        return api(originalRequest);
-      });
+      })
+        .then(() => api(originalRequest))
+        .catch((err) => Promise.reject(err));
     }
 
     originalRequest._retry = true;
     isRefreshing = true;
 
     try {
-      const { data } = await axios.post(`${API_URL}/auth/refresh/`, { refresh });
-      const newAccess = data.access;
-      localStorage.setItem("access_token", newAccess);
-      if (data.refresh) {
-        localStorage.setItem("refresh_token", data.refresh);
-      }
-      api.defaults.headers.common.Authorization = `Bearer ${newAccess}`;
-      processQueue(null, newAccess);
-      originalRequest.headers.Authorization = `Bearer ${newAccess}`;
+      await axios.post(
+        `${API_URL}/auth/refresh/`,
+        {},
+        { withCredentials: true }
+      );
+      processQueue(null);
       return api(originalRequest);
     } catch (refreshError) {
-      processQueue(refreshError, null);
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
+      processQueue(refreshError);
       window.location.href = "/login";
       return Promise.reject(refreshError);
     } finally {
@@ -82,7 +63,11 @@ api.interceptors.response.use(
 export const authAPI = {
   register: (data) => api.post("/auth/register/", data),
   login: (data) => api.post("/auth/login/", data),
-  logout: (refresh) => api.post("/auth/logout/", { refresh }),
+  logout: () => api.post("/auth/logout/", {}),
+  forgotPassword: (data) => api.post("/auth/forgot-password/", data),
+  resetPassword: (data) => api.post("/auth/reset-password/", data),
+  verifyEmail: (token) => api.get(`/auth/verify-email/?token=${token}`),
+  resendVerification: (data) => api.post("/auth/resend-verification/", data),
   getMe: () => api.get("/auth/me/"),
   updateMe: (data) => api.patch("/auth/me/", data),
   changePassword: (data) => api.post("/auth/change-password/", data),

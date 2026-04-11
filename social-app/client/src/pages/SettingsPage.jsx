@@ -45,7 +45,7 @@ function getPasswordStrength(password) {
 }
 
 export default function SettingsPage() {
-  const { user, logout, updateTokens, updateUser } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
 
@@ -128,8 +128,7 @@ export default function SettingsPage() {
 
     setPasswordLoading(true);
     try {
-      const { data } = await authAPI.changePassword(passwordForm);
-      updateTokens(data.tokens);
+      await authAPI.changePassword(passwordForm);
       setPasswordForm({ current_password: "", new_password: "", confirm_password: "" });
       showToast("success", "Đổi mật khẩu thành công");
     } catch (err) {
@@ -151,8 +150,7 @@ export default function SettingsPage() {
     setDeleteLoading(true);
     try {
       await authAPI.deleteAccount({ password: deleteForm.password });
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
+      await logout();
       showToast("success", "Tài khoản đã được xoá");
       navigate("/login");
     } catch (err) {

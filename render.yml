@@ -32,6 +32,10 @@ services:
         value: "https://social-app-api-p54k.onrender.com,https://social-app-api.onrender.com,https://fbfake.vercel.app"
       - key: REDIS_URL
         sync: false
+      - key: RECAPTCHA_SECRET_KEY
+        sync: false
+      - key: RECAPTCHA_ENABLED
+        value: "True"
 
 databases:
   - name: social-app-db

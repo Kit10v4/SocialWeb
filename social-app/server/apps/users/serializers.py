@@ -1,10 +1,14 @@
+import requests as http_requests
+
+from django.conf import settings
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.db.models import Q
+from django.utils import timezone
 from typing import Any
 from rest_framework import serializers
 
-from .models import Friendship, User
+from .models import Friendship, LOCKOUT_DURATION_MINUTES, MAX_FAILED_ATTEMPTS, User
 
 
 # ---------------------------------------------------------------------------
@@ -16,6 +20,8 @@ class RegisterSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, min_length=8)
     password_confirm = serializers.CharField(write_only=True)
+    recaptcha_token = serializers.CharField(write_only=True)
+    terms_accepted = serializers.BooleanField(write_only=True)
 
     def validate_email(self, value: str) -> str:
         if User.objects.filter(email=value).exists():
@@ -31,6 +37,48 @@ class RegisterSerializer(serializers.Serializer):
         validate_password(value)
         return value
 
+    def validate_recaptcha_token(self, value: str) -> str:
+        """Verify reCAPTCHA token với Google siteverify API."""
+        if not settings.RECAPTCHA_ENABLED:
+            return value  # bypass trong development/test
+
+        if not value:
+            raise serializers.ValidationError("reCAPTCHA token bị thiếu.")
+
+        secret = settings.RECAPTCHA_SECRET_KEY
+        if not secret:
+            raise serializers.ValidationError(
+                "reCAPTCHA chưa được cấu hình phía server."
+            )
+
+        try:
+            resp = http_requests.post(
+                settings.RECAPTCHA_VERIFY_URL,
+                data={"secret": secret, "response": value},
+                timeout=5,
+            )
+            result = resp.json()
+        except Exception:
+            raise serializers.ValidationError(
+                "Không thể xác minh reCAPTCHA. Vui lòng thử lại."
+            )
+
+        if not result.get("success"):
+            error_codes = result.get("error-codes", [])
+            raise serializers.ValidationError(
+                f"reCAPTCHA xác minh thất bại: {', '.join(error_codes)}"
+            )
+
+        return value
+
+    def validate_terms_accepted(self, value: bool) -> bool:
+        if not value:
+            raise serializers.ValidationError(
+                "Bạn phải đồng ý với Điều khoản dịch vụ và Chính sách "
+                "bảo mật để tiếp tục."
+            )
+        return value
+
     def validate(self, data: dict[str, Any]) -> dict[str, Any]:
         if data["password"] != data["password_confirm"]:
             raise serializers.ValidationError(
@@ -40,7 +88,21 @@ class RegisterSerializer(serializers.Serializer):
 
     def create(self, validated_data: dict[str, Any]) -> User:
         validated_data.pop("password_confirm")
-        return User.objects.create_user(**validated_data)
+        validated_data.pop("recaptcha_token")
+        terms_accepted = validated_data.pop("terms_accepted")
+
+        user = User.objects.create_user(
+            **validated_data,
+            is_active=False,
+        )
+        if terms_accepted:
+            user.terms_accepted_at = timezone.now()
+            user.save(update_fields=["terms_accepted_at"])
+
+        from .utils import send_verification_email
+
+        send_verification_email(user)
+        return user
 
 
 class LoginSerializer(serializers.Serializer):
@@ -48,11 +110,47 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
     def validate(self, data: dict[str, Any]) -> dict[str, Any]:
-        user = authenticate(email=data["email"], password=data["password"])
+        email = data.get("email", "").lower()
+
+        try:
+            user_obj = User.objects.get(email=email)
+            if user_obj.is_locked_out():
+                remaining = user_obj.remaining_lockout_seconds()
+                minutes = remaining // 60
+                seconds = remaining % 60
+                raise serializers.ValidationError(
+                    f"Tài khoản tạm thời bị khóa do đăng nhập sai nhiều lần. "
+                    f"Thử lại sau {minutes} phút {seconds} giây."
+                )
+        except User.DoesNotExist:
+            pass
+
+        user = authenticate(email=email, password=data["password"])
         if user is None:
-            raise serializers.ValidationError("Invalid email or password.")
+            try:
+                failed_user = User.objects.get(email=email)
+                failed_user.record_failed_login()
+                remaining_attempts = max(
+                    0, MAX_FAILED_ATTEMPTS - failed_user.failed_login_attempts
+                )
+                if failed_user.is_locked_out():
+                    raise serializers.ValidationError(
+                        f"Tài khoản đã bị khóa {LOCKOUT_DURATION_MINUTES} phút "
+                        f"do đăng nhập sai quá {MAX_FAILED_ATTEMPTS} lần."
+                    )
+                if remaining_attempts <= 2:
+                    raise serializers.ValidationError(
+                        f"Sai mật khẩu. Còn {remaining_attempts} lần thử "
+                        f"trước khi tài khoản bị khóa tạm thời."
+                    )
+            except User.DoesNotExist:
+                pass
+
+            raise serializers.ValidationError("Email hoặc mật khẩu không đúng.")
         if not user.is_active:
-            raise serializers.ValidationError("This account is deactivated.")
+            raise serializers.ValidationError("Tài khoản này đã bị vô hiệu hóa.")
+
+        user.clear_failed_logins()
         data["user"] = user
         return data
 

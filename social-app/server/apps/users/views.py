@@ -1,5 +1,6 @@
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.conf import settings
 from django.db.models import Count, Exists, OuterRef, Q
 from django.utils.decorators import method_decorator
 from typing import Any
@@ -9,15 +10,22 @@ from django_ratelimit.decorators import ratelimit
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.settings import api_settings
 
 from apps.posts.models import Like, Post, SavedPost
 from apps.posts.serializers import PostSerializer
 
-from .models import Friendship, Report, User
+from .models import (
+    AuditLog,
+    EmailVerificationToken,
+    Friendship,
+    PasswordResetToken,
+    Report,
+    User,
+)
 from .serializers import (
     FriendshipSerializer,
     LoginSerializer,
@@ -26,7 +34,8 @@ from .serializers import (
     UserMiniSerializer,
     UserProfileSerializer,
 )
-from .utils import resize_image
+from .utils import resize_image, send_verification_email
+from .utils import log_audit_event
 
 
 # ===========================================================================
@@ -38,6 +47,47 @@ def _get_tokens(user: Any) -> dict[str, str]:
     return {"access": str(refresh.access_token), "refresh": str(refresh)}
 
 
+COOKIE_SETTINGS = {
+    "httponly": True,
+    "secure": not settings.DEBUG,
+    "samesite": "Lax",
+    "path": "/",
+}
+ACCESS_COOKIE_MAX_AGE = 15 * 60
+REFRESH_COOKIE_MAX_AGE = 7 * 24 * 60 * 60
+
+
+def _set_auth_cookies(response: Response, tokens: dict[str, str]) -> None:
+    response.set_cookie(
+        "access_token",
+        tokens["access"],
+        max_age=ACCESS_COOKIE_MAX_AGE,
+        **COOKIE_SETTINGS,
+    )
+    response.set_cookie(
+        "refresh_token",
+        tokens["refresh"],
+        max_age=REFRESH_COOKIE_MAX_AGE,
+        **COOKIE_SETTINGS,
+    )
+
+
+def _clear_auth_cookies(response: Response) -> None:
+    response.delete_cookie("access_token", path="/")
+    response.delete_cookie("refresh_token", path="/")
+
+
+def get_login_key(group: str, request: Any) -> str:
+    """Rate limit theo email (nếu có) + IP."""
+    email = (request.data or {}).get("email", "")
+    ip = request.META.get(
+        "HTTP_X_FORWARDED_FOR", request.META.get("REMOTE_ADDR", "")
+    )
+    if email:
+        return f"login_email_{email.lower()}"
+    return f"login_ip_{ip}"
+
+
 @method_decorator(
     ratelimit(key="ip", rate="3/m", method="POST", block=True),
     name="dispatch",
@@ -47,11 +97,32 @@ class RegisterView(APIView):
 
     def post(self, request: Any) -> Response:
         serializer = RegisterSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception:
+            log_audit_event(
+                request,
+                event_type=AuditLog.EventType.REGISTER_FAILED,
+                email=request.data.get("email", ""),
+                detail={"errors": serializer.errors},
+            )
+            raise
+
         user = serializer.save()
+        log_audit_event(
+            request,
+            event_type=AuditLog.EventType.REGISTER_SUCCESS,
+            email=user.email,
+            user=user,
+        )
         return Response(
-            {"user": UserProfileSerializer(user, context={"request": request}).data,
-             "tokens": _get_tokens(user)},
+            {
+                "detail": (
+                    "Đăng ký thành công! Vui lòng kiểm tra email "
+                    f"{user.email} để xác minh tài khoản."
+                ),
+                "email": user.email,
+            },
             status=status.HTTP_201_CREATED,
         )
 
@@ -60,38 +131,306 @@ class RegisterView(APIView):
     ratelimit(key="ip", rate="5/m", method="POST", block=True),
     name="dispatch",
 )
+@method_decorator(
+    ratelimit(key=get_login_key, rate="10/m", method="POST", block=True),
+    name="dispatch",
+)
 class LoginView(APIView):
     permission_classes = (AllowAny,)
 
     def post(self, request: Any) -> Response:
         serializer = LoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception:
+            email = request.data.get("email", "")
+            errors = serializer.errors.get("non_field_errors", [])
+            error_str = " ".join(str(e) for e in errors)
+            event = (
+                AuditLog.EventType.LOGIN_LOCKED
+                if "bị khóa" in error_str
+                else AuditLog.EventType.LOGIN_FAILED
+            )
+            log_audit_event(
+                request,
+                event_type=event,
+                email=email,
+                detail={"errors": serializer.errors},
+            )
+            raise
+
         user = serializer.validated_data["user"]
-        return Response(
-            {"user": UserProfileSerializer(user, context={"request": request}).data,
-             "tokens": _get_tokens(user)},
+        log_audit_event(
+            request,
+            event_type=AuditLog.EventType.LOGIN_SUCCESS,
+            email=user.email,
+            user=user,
+        )
+        tokens = _get_tokens(user)
+        response = Response(
+            {"user": UserProfileSerializer(user, context={"request": request}).data},
             status=status.HTTP_200_OK,
         )
+        _set_auth_cookies(response, tokens)
+        return response
 
 
-class CustomTokenRefreshView(TokenRefreshView):
-    pass
+class CustomTokenRefreshView(APIView):
+    """POST /api/auth/refresh/ — dùng refresh_token cookie."""
+
+    permission_classes = (AllowAny,)
+
+    def post(self, request: Any) -> Response:
+        refresh_token = request.COOKIES.get("refresh_token")
+        if not refresh_token:
+            return Response(
+                {"detail": "Refresh token không tìm thấy."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+        try:
+            refresh = RefreshToken(refresh_token)
+            if api_settings.ROTATE_REFRESH_TOKENS:
+                if api_settings.BLACKLIST_AFTER_ROTATION:
+                    try:
+                        refresh.blacklist()
+                    except AttributeError:
+                        pass
+                refresh.set_jti()
+                refresh.set_exp()
+                refresh.set_iat()
+            tokens = {
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+            }
+            response = Response({"detail": "Token refreshed."})
+            _set_auth_cookies(response, tokens)
+            return response
+        except TokenError as e:
+            raise InvalidToken(e.args[0])
+
+
+class VerifyEmailView(APIView):
+    """GET /api/auth/verify-email/?token=..."""
+
+    permission_classes = (AllowAny,)
+
+    def get(self, request: Any) -> Response:
+        token_str = request.query_params.get("token", "").strip()
+        if not token_str:
+            return Response(
+                {"detail": "Token xác minh bị thiếu."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            token_obj = EmailVerificationToken.objects.select_related("user").get(
+                token=token_str
+            )
+        except EmailVerificationToken.DoesNotExist:
+            return Response(
+                {"detail": "Link xác minh không hợp lệ."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not token_obj.is_valid():
+            return Response(
+                {"detail": "Link xác minh đã hết hạn. Vui lòng yêu cầu gửi lại."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = token_obj.user
+        user.is_active = True
+        user.save(update_fields=["is_active"])
+        token_obj.delete()
+        log_audit_event(
+            request,
+            event_type=AuditLog.EventType.EMAIL_VERIFIED,
+            email=user.email,
+            user=user,
+        )
+        tokens = _get_tokens(user)
+        response = Response(
+            {
+                "detail": "Email xác minh thành công! Chào mừng bạn.",
+                "user": UserProfileSerializer(user, context={"request": request}).data,
+            }
+        )
+        _set_auth_cookies(response, tokens)
+        return response
+
+
+class ResendVerificationView(APIView):
+    """POST /api/auth/resend-verification/ {"email": "..."}"""
+
+    permission_classes = (AllowAny,)
+
+    def post(self, request: Any) -> Response:
+        email = request.data.get("email", "").strip().lower()
+        try:
+            user = User.objects.get(email=email, is_active=False)
+            send_verification_email(user)
+        except User.DoesNotExist:
+            pass
+
+        return Response(
+            {"detail": "Nếu email hợp lệ, link xác minh đã được gửi lại."}
+        )
 
 
 class LogoutView(APIView):
     permission_classes = (IsAuthenticated,)
 
     def post(self, request: Any) -> Response:
-        refresh_token = request.data.get("refresh")
-        if not refresh_token:
-            return Response({"detail": "Refresh token is required."},
-                            status=status.HTTP_400_BAD_REQUEST)
+        refresh_token = request.COOKIES.get("refresh_token")
+        current_user = request.user if getattr(request.user, "is_authenticated", False) else None
+        log_audit_event(
+            request,
+            event_type=AuditLog.EventType.LOGOUT,
+            email=getattr(current_user, "email", ""),
+            user=current_user,
+        )
+        if refresh_token:
+            try:
+                RefreshToken(refresh_token).blacklist()
+            except TokenError:
+                pass
+        response = Response({"detail": "Successfully logged out."})
+        _clear_auth_cookies(response)
+        return response
+
+
+class ForgotPasswordView(APIView):
+    """
+    POST /api/auth/forgot-password/
+    Body: {"email": "user@example.com"}
+    Luôn trả về 200 (không reveal email có tồn tại không).
+    """
+
+    permission_classes = (AllowAny,)
+
+    @method_decorator(
+        ratelimit(key="ip", rate="3/m", method="POST", block=True),
+        name="dispatch",
+    )
+
+    def post(self, request: Any) -> Response:
+        email = request.data.get("email", "").strip().lower()
+        if not email:
+            return Response(
+                {"detail": "Email là bắt buộc."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         try:
-            RefreshToken(refresh_token).blacklist()
-        except TokenError:
-            return Response({"detail": "Token is invalid or already blacklisted."},
-                            status=status.HTTP_400_BAD_REQUEST)
-        return Response({"detail": "Successfully logged out."})
+            user = User.objects.get(email=email, is_active=True)
+            reset_token = PasswordResetToken.create_for_user(user)
+            reset_url = (
+                f"{settings.FRONTEND_URL}/reset-password"
+                f"?token={reset_token.token}"
+            )
+
+            from django.core.mail import send_mail
+
+            send_mail(
+                subject="[SocialWeb] Đặt lại mật khẩu",
+                message=(
+                    f"Xin chào {user.username},\n\n"
+                    f"Nhấn vào link sau để đặt lại mật khẩu (hiệu lực 1 giờ):\n"
+                    f"{reset_url}\n\n"
+                    f"Nếu bạn không yêu cầu, hãy bỏ qua email này.\n\n"
+                    f"— Đội SocialWeb"
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=True,
+            )
+        except User.DoesNotExist:
+            pass
+
+        return Response(
+            {
+                "detail": (
+                    "Nếu email tồn tại trong hệ thống, "
+                    "bạn sẽ nhận được hướng dẫn đặt lại mật khẩu."
+                )
+            }
+        )
+
+
+class ResetPasswordView(APIView):
+    """
+    POST /api/auth/reset-password/
+    Body: {"token": "...", "new_password": "...", "confirm_password": "..."}
+    """
+
+    permission_classes = (AllowAny,)
+
+    def post(self, request: Any) -> Response:
+        token_str = request.data.get("token", "").strip()
+        new_password = request.data.get("new_password", "")
+        confirm_password = request.data.get("confirm_password", "")
+
+        if not all([token_str, new_password, confirm_password]):
+            return Response(
+                {"detail": "Vui lòng điền đầy đủ tất cả các trường."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if new_password != confirm_password:
+            return Response(
+                {"detail": "Mật khẩu xác nhận không khớp."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            reset_token = PasswordResetToken.objects.select_related("user").get(
+                token=token_str
+            )
+        except PasswordResetToken.DoesNotExist:
+            return Response(
+                {"detail": "Link đặt lại mật khẩu không hợp lệ."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not reset_token.is_valid():
+            return Response(
+                {
+                    "detail": (
+                        "Link đã hết hạn hoặc đã được sử dụng. "
+                        "Vui lòng yêu cầu lại."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            validate_password(new_password, reset_token.user)
+        except ValidationError as e:
+            return Response(
+                {"detail": e.messages[0]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        reset_token.user.set_password(new_password)
+        reset_token.user.save()
+        log_audit_event(
+            request,
+            event_type=AuditLog.EventType.PASSWORD_RESET,
+            email=reset_token.user.email,
+            user=reset_token.user,
+        )
+
+        reset_token.is_used = True
+        reset_token.save(update_fields=["is_used"])
+
+        outstanding_tokens = OutstandingToken.objects.filter(user=reset_token.user)
+        for token in outstanding_tokens:
+            try:
+                BlacklistedToken.objects.get_or_create(token=token)
+            except Exception:
+                pass
+
+        return Response({"detail": "Mật khẩu đã được đặt lại thành công."})
 
 
 class ChangePasswordView(APIView):

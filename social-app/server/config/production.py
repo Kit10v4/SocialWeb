@@ -2,33 +2,61 @@ import os
 
 from .base import *  # noqa
 
-# Force production-safe defaults
+# ── Core ─────────────────────────────────────────────────────
 DEBUG = False
-SECRET_KEY = os.environ["SECRET_KEY"]  # must be set in environment
+SECRET_KEY = os.environ["SECRET_KEY"]  # bắt buộc, fail nếu thiếu
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
 
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost").split(",")
-
-# Security headers
-SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "True").lower() in (
-    "true",
-    "1",
-    "yes",
-)
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
-SECURE_HSTS_SECONDS = int(os.getenv("SECURE_HSTS_SECONDS", "31536000"))
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
+# ── HTTPS / SSL ──────────────────────────────────────────────
+SECURE_SSL_REDIRECT = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-# CSRF
-CSRF_TRUSTED_ORIGINS = [
-    origin
-    for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
-    if origin
+# ── HSTS ─────────────────────────────────────────────────────
+SECURE_HSTS_SECONDS = 31536000  # 1 năm
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+
+# ── Cookie security ──────────────────────────────────────────
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = "Lax"
+
+# ── Security headers bổ sung ─────────────────────────────────
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+X_FRAME_OPTIONS = "DENY"
+
+# ── Referrer Policy ──────────────────────────────────────────
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+
+# ── CORS ─────────────────────────────────────────────────────
+_cors_origins = os.getenv("CORS_ALLOWED_ORIGINS", "")
+CORS_ALLOWED_ORIGINS = [
+    o.strip() for o in _cors_origins.split(",") if o.strip()
 ]
+
+# ── CSRF Trusted Origins ─────────────────────────────────────
+_csrf = os.getenv("CSRF_TRUSTED_ORIGINS", "")
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf.split(",") if o.strip()]
 if not CSRF_TRUSTED_ORIGINS:
     CSRF_TRUSTED_ORIGINS = [
         "https://social-app-api-p54k.onrender.com",
         "https://social-app-api.onrender.com",
     ]
+
+# ── Cache (Redis nếu có, fallback LocMem) ────────────────────
+_redis_url = os.getenv("REDIS_URL")
+if _redis_url:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": _redis_url,
+        }
+    }
+
+# ── reCAPTCHA ────────────────────────────────────────────────
+RECAPTCHA_ENABLED = True  # bắt buộc bật trên production

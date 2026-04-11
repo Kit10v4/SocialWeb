@@ -1,7 +1,12 @@
 import io
+import logging
 
+from django.conf import settings
+from django.core.mail import send_mail
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from PIL import Image
+
+from .models import AuditLog, EmailVerificationToken
 
 
 def resize_image(image_file, size=(400, 400)):
@@ -30,3 +35,56 @@ def resize_image(image_file, size=(400, 400)):
         size=buf.getbuffer().nbytes,
         charset=None,
     )
+
+
+def send_verification_email(user):
+    """Gửi email xác minh tài khoản."""
+    token_obj = EmailVerificationToken.create_for_user(user)
+    verify_url = (
+        f"{settings.FRONTEND_URL}/verify-email"
+        f"?token={token_obj.token}"
+    )
+
+    send_mail(
+        subject="[SocialWeb] Xác minh địa chỉ email",
+        message=(
+            f"Chào {user.username},\n\n"
+            f"Cảm ơn bạn đã đăng ký SocialWeb!\n"
+            f"Nhấn vào link sau để xác minh email (hiệu lực 24 giờ):\n\n"
+            f"{verify_url}\n\n"
+            f"Nếu bạn không đăng ký tài khoản này, hãy bỏ qua email này.\n\n"
+            f"— Đội SocialWeb"
+        ),
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[user.email],
+        fail_silently=True,
+    )
+
+
+def get_client_ip(request) -> str:
+    """Lấy IP thực của client, xử lý proxy."""
+    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+    if x_forwarded_for:
+        return x_forwarded_for.split(",")[0].strip()
+    return request.META.get("REMOTE_ADDR", "")
+
+
+def log_audit_event(
+    request,
+    event_type: str,
+    email: str = "",
+    user=None,
+    detail: dict | None = None,
+) -> None:
+    """Ghi audit log. Không raise exception nếu thất bại."""
+    try:
+        AuditLog.objects.create(
+            event_type=event_type,
+            email=email[:254] if email else "",
+            user=user,
+            ip_address=get_client_ip(request),
+            user_agent=request.META.get("HTTP_USER_AGENT", "")[:500],
+            detail=detail or {},
+        )
+    except Exception as exc:
+        logging.getLogger(__name__).error("Không thể ghi audit log: %s", exc)
