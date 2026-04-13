@@ -261,6 +261,27 @@ else:
 
 
 # ---------------------------------------------------------------------------
+# Caching - Required for django-ratelimit
+# ---------------------------------------------------------------------------
+
+if REDIS_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": REDIS_URL,
+        }
+    }
+else:
+    # Fallback to LocMemCache for development or when Redis is not available
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "unique-snowflake",
+        }
+    }
+
+
+# ---------------------------------------------------------------------------
 # Cloudinary
 # ---------------------------------------------------------------------------
 

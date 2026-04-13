@@ -204,6 +204,13 @@ CLOUDINARY_API_SECRET=your-api-secret
 
 # CORS
 FRONTEND_URL=http://localhost:5173
+
+# Redis (optional - dùng cho production)
+REDIS_URL=redis://...
+
+# reCAPTCHA (optional)
+RECAPTCHA_SECRET_KEY=your-secret-key
+RECAPTCHA_ENABLED=False  # True trên production
 ```
 
 ### Client (`social-app/client/.env.local`)
@@ -211,7 +218,50 @@ FRONTEND_URL=http://localhost:5173
 ```env
 VITE_API_URL=http://localhost:8000/api
 VITE_WS_URL=ws://localhost:8000
+VITE_RECAPTCHA_SITE_KEY=your-recaptcha-site-key
 ```
+
+---
+
+## 🌐 Deploy Production
+
+### Vercel (Frontend)
+
+1. Import repository vào Vercel
+2. **QUAN TRỌNG:** Đặt biến môi trường trong Vercel Dashboard:
+   ```
+   VITE_API_URL=https://social-app-api-p54k.onrender.com/api
+   VITE_WS_URL=wss://social-app-api-p54k.onrender.com
+   VITE_RECAPTCHA_SITE_KEY=your-production-recaptcha-key
+   ```
+3. Build command: `npm run build`
+4. Output directory: `dist`
+
+### Render (Backend)
+
+1. Tạo PostgreSQL database trên Render
+2. Tạo Web Service với `render.yml` configuration
+3. Đặt biến môi trường:
+   - `SECRET_KEY`: tự động generate
+   - `DATABASE_URL`: từ PostgreSQL service
+   - `CORS_ALLOWED_ORIGINS`: `https://your-frontend-domain.vercel.app`
+   - `REDIS_URL`: (optional) nếu dùng Redis
+   - `RECAPTCHA_SECRET_KEY`: key từ Google reCAPTCHA
+   - `JWT_COOKIE_SAMESITE`: `None` (cross-site)
+   - `JWT_COOKIE_SECURE`: `True`
+
+### Troubleshooting
+
+**Lỗi 500 Internal Server Error khi login:**
+
+- Kiểm tra cache backend được cấu hình (REDIS_URL hoặc fallback LocMemCache)
+- Kiểm tra health endpoint: `/health/` phải trả về `{"database": "ok", "cache": "ok"}`
+
+**Lỗi 401 khi gọi API:**
+
+- Kiểm tra `CORS_ALLOWED_ORIGINS` có chứa frontend domain
+- Kiểm tra cookies được gửi đúng (`withCredentials: true` trong axios)
+- Với cross-site (Vercel → Render): cần `JWT_COOKIE_SAMESITE=None` và `JWT_COOKIE_SECURE=True`
 
 ---
 

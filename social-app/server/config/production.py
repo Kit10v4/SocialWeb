@@ -57,6 +57,15 @@ if _redis_url:
             "LOCATION": _redis_url,
         }
     }
+else:
+    # Fallback to LocMemCache when Redis is not available
+    # Required for django-ratelimit to work
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "unique-snowflake",
+        }
+    }
 
 # ── reCAPTCHA ────────────────────────────────────────────────
 RECAPTCHA_ENABLED = True  # bắt buộc bật trên production
