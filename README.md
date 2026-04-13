@@ -373,4 +373,4 @@ MIT License — xem file [LICENSE](LICENSE) để biết thêm chi tiết.
 - [Django Channels](https://channels.readthedocs.io/)
 - [TanStack Query](https://tanstack.com/query)
 - [Cloudinary](https://cloudinary.com/)
-- [Render.com](https://render.com/) & [Vercel](https://vercel.com/) — free hosting
+- [Render.com](https://render.com/) & [Vercel](https://vercel.com/)
