@@ -79,10 +79,25 @@ def _clear_auth_cookies(response: Response) -> None:
 
 def get_login_key(group: str, request: Any) -> str:
     """Rate limit theo email (nếu có) + IP."""
-    email = (request.data or {}).get("email", "")
+    import json
+    email = ""
+    
+    # Thử lấy email từ request body (hỗ trợ cả WSGI và ASGI)
+    try:
+        if hasattr(request, 'data') and request.data:
+            email = request.data.get("email", "")
+        elif hasattr(request, 'body') and request.body:
+            body = json.loads(request.body.decode('utf-8'))
+            email = body.get("email", "")
+    except (json.JSONDecodeError, UnicodeDecodeError, AttributeError):
+        pass
+    
     ip = request.META.get(
         "HTTP_X_FORWARDED_FOR", request.META.get("REMOTE_ADDR", "")
     )
+    if ip and "," in ip:
+        ip = ip.split(",")[0].strip()
+    
     if email:
         return f"login_email_{email.lower()}"
     return f"login_ip_{ip}"
@@ -183,10 +198,12 @@ class CustomTokenRefreshView(APIView):
     def post(self, request: Any) -> Response:
         refresh_token = request.COOKIES.get("refresh_token")
         if not refresh_token:
-            return Response(
-                {"detail": "Refresh token không tìm thấy."},
+            response = Response(
+                {"detail": "Refresh token không tìm thấy. Vui lòng đăng nhập lại."},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
+            _clear_auth_cookies(response)
+            return response
         try:
             refresh = RefreshToken(refresh_token)
             if api_settings.ROTATE_REFRESH_TOKENS:
@@ -205,8 +222,14 @@ class CustomTokenRefreshView(APIView):
             response = Response({"detail": "Token refreshed."})
             _set_auth_cookies(response, tokens)
             return response
-        except TokenError as e:
-            raise InvalidToken(e.args[0])
+        except TokenError:
+            # Token đã hết hạn hoặc bị blacklist -> xóa cookies và yêu cầu đăng nhập lại
+            response = Response(
+                {"detail": "Refresh token đã hết hạn. Vui lòng đăng nhập lại."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+            _clear_auth_cookies(response)
+            return response
 
 
 class VerifyEmailView(APIView):
