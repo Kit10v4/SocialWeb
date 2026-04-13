@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from urllib.parse import urlparse
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -318,3 +319,18 @@ EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@socialweb.app")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
+# ── JWT auth cookie policy ─────────────────────────────────────
+# Nếu frontend/backend chạy khác site (vd: Vercel -> Render), cookie JWT cần
+# SameSite=None để browser chấp nhận gửi cookie trong XHR/fetch cross-site.
+_frontend_host = urlparse(FRONTEND_URL).hostname or ""
+_is_local_frontend = _frontend_host in {"localhost", "127.0.0.1"}
+
+JWT_COOKIE_SAMESITE = os.getenv(
+    "JWT_COOKIE_SAMESITE",
+    "Lax" if _is_local_frontend else "None",
+)
+JWT_COOKIE_SECURE = os.getenv(
+    "JWT_COOKIE_SECURE",
+    "True" if JWT_COOKIE_SAMESITE == "None" else str(not DEBUG),
+).lower() in ("true", "1", "yes")

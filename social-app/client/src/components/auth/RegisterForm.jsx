@@ -147,10 +147,10 @@ export default function RegisterForm() {
       password_confirm: true,
       terms: true,
     });
-    if (!recaptchaToken) {
+    if (RECAPTCHA_SITE_KEY && !recaptchaToken) {
       setRecaptchaError("Vui lòng xác minh bạn không phải robot.");
     }
-    if (Object.keys(submitErrors).length || !recaptchaToken) {
+    if (Object.keys(submitErrors).length || (RECAPTCHA_SITE_KEY && !recaptchaToken)) {
       setErrors((prev) => ({ ...prev, ...submitErrors }));
       return;
     }

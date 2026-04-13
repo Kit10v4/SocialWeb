@@ -49,8 +49,8 @@ def _get_tokens(user: Any) -> dict[str, str]:
 
 COOKIE_SETTINGS = {
     "httponly": True,
-    "secure": not settings.DEBUG,
-    "samesite": "Lax",
+    "secure": settings.JWT_COOKIE_SECURE,
+    "samesite": settings.JWT_COOKIE_SAMESITE,
     "path": "/",
 }
 ACCESS_COOKIE_MAX_AGE = 15 * 60
