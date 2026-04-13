@@ -326,11 +326,22 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 _frontend_host = urlparse(FRONTEND_URL).hostname or ""
 _is_local_frontend = _frontend_host in {"localhost", "127.0.0.1"}
 
-JWT_COOKIE_SAMESITE = os.getenv(
+_jwt_cookie_samesite_raw = os.getenv(
     "JWT_COOKIE_SAMESITE",
-    "Lax" if _is_local_frontend else "None",
+    "None" if not DEBUG else ("Lax" if _is_local_frontend else "None"),
+).strip().lower()
+_jwt_cookie_samesite_map = {
+    "lax": "Lax",
+    "strict": "Strict",
+    "none": "None",
+}
+JWT_COOKIE_SAMESITE = _jwt_cookie_samesite_map.get(
+    _jwt_cookie_samesite_raw,
+    "None" if not DEBUG else ("Lax" if _is_local_frontend else "None"),
 )
 JWT_COOKIE_SECURE = os.getenv(
     "JWT_COOKIE_SECURE",
     "True" if JWT_COOKIE_SAMESITE == "None" else str(not DEBUG),
 ).lower() in ("true", "1", "yes")
+if JWT_COOKIE_SAMESITE == "None":
+    JWT_COOKIE_SECURE = True

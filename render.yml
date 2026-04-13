@@ -36,6 +36,12 @@ services:
         sync: false
       - key: RECAPTCHA_ENABLED
         value: "True"
+      - key: FRONTEND_URL
+        value: "https://fbfake.vercel.app"
+      - key: JWT_COOKIE_SAMESITE
+        value: "None"
+      - key: JWT_COOKIE_SECURE
+        value: "True"
 
 databases:
   - name: social-app-db
