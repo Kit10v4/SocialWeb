@@ -2,8 +2,8 @@ import io
 import logging
 import threading
 
+import requests as http_requests
 from django.conf import settings
-from django.core.mail import send_mail
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from PIL import Image
 
@@ -41,17 +41,35 @@ def resize_image(image_file, size=(400, 400)):
 
 
 def _send_mail_async(subject, message, from_email, recipient_list):
-    """Gửi email trong background thread để không block Daphne event loop."""
+    """Gửi email qua Resend HTTP API trong background thread."""
     def _send():
+        api_key = getattr(settings, "RESEND_API_KEY", "")
+        if not api_key:
+            logger.warning("RESEND_API_KEY not configured, skipping email to %s", recipient_list)
+            return
+
         try:
-            send_mail(
-                subject=subject,
-                message=message,
-                from_email=from_email,
-                recipient_list=recipient_list,
-                fail_silently=False,
+            resp = http_requests.post(
+                "https://api.resend.com/emails",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "from": from_email,
+                    "to": recipient_list,
+                    "subject": subject,
+                    "text": message,
+                },
+                timeout=10,
             )
-            logger.info("Email sent to %s", recipient_list)
+            if resp.status_code in (200, 201):
+                logger.info("Email sent to %s via Resend", recipient_list)
+            else:
+                logger.error(
+                    "Resend API error %s for %s: %s",
+                    resp.status_code, recipient_list, resp.text,
+                )
         except Exception as e:
             logger.error("Failed to send email to %s: %s", recipient_list, e)
 
