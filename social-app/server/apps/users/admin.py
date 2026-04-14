@@ -40,7 +40,10 @@ class UserAdmin(BaseUserAdmin):
 
     @admin.display(description="Verified", boolean=True)
     def is_verified(self, obj):
-        return obj.is_active and not hasattr(obj, 'email_verification_token')
+        try:
+            return obj.is_active and not EmailVerificationToken.objects.filter(user=obj).exists()
+        except Exception:
+            return obj.is_active
 
     @admin.display(description="Posts", ordering="_post_count")
     def post_count(self, obj):
