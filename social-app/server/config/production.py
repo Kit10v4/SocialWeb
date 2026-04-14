@@ -70,6 +70,6 @@ else:
 # ── reCAPTCHA ────────────────────────────────────────────────
 RECAPTCHA_ENABLED = True  # bắt buộc bật trên production
 
-# ── Email (Resend HTTP API) ──────────────────────────────────
-RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+# ── Email (Brevo HTTP API) ───────────────────────────────────
+BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "SocialWeb <noreply@socialweb.app>")

@@ -41,33 +41,33 @@ def resize_image(image_file, size=(400, 400)):
 
 
 def _send_mail_async(subject, message, from_email, recipient_list):
-    """Gửi email qua Resend HTTP API trong background thread."""
+    """Gửi email qua Brevo HTTP API trong background thread."""
     def _send():
-        api_key = getattr(settings, "RESEND_API_KEY", "")
+        api_key = getattr(settings, "BREVO_API_KEY", "")
         if not api_key:
-            logger.warning("RESEND_API_KEY not configured, skipping email to %s", recipient_list)
+            logger.warning("BREVO_API_KEY not configured, skipping email to %s", recipient_list)
             return
 
         try:
             resp = http_requests.post(
-                "https://api.resend.com/emails",
+                "https://api.brevo.com/v3/smtp/email",
                 headers={
-                    "Authorization": f"Bearer {api_key}",
+                    "api-key": api_key,
                     "Content-Type": "application/json",
                 },
                 json={
-                    "from": from_email,
-                    "to": recipient_list,
+                    "sender": {"email": from_email},
+                    "to": [{"email": email} for email in recipient_list],
                     "subject": subject,
-                    "text": message,
+                    "textContent": message,
                 },
                 timeout=10,
             )
             if resp.status_code in (200, 201):
-                logger.info("Email sent to %s via Resend", recipient_list)
+                logger.info("Email sent to %s via Brevo", recipient_list)
             else:
                 logger.error(
-                    "Resend API error %s for %s: %s",
+                    "Brevo API error %s for %s: %s",
                     resp.status_code, recipient_list, resp.text,
                 )
         except Exception as e:

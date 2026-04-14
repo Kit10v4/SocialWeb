@@ -36,7 +36,7 @@ services:
         sync: false
       - key: RECAPTCHA_ENABLED
         value: "True"
-      - key: RESEND_API_KEY
+      - key: BREVO_API_KEY
         sync: false
       - key: DEFAULT_FROM_EMAIL
         sync: false

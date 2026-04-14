@@ -328,8 +328,8 @@ RECAPTCHA_ENABLED = os.getenv("RECAPTCHA_ENABLED", "True").lower() in (
     "true", "1", "yes"
 )
 
-# ── Email (Resend HTTP API) ────────────────────────────────────────
-RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
+# ── Email (Brevo HTTP API) ─────────────────────────────────────────
+BREVO_API_KEY = os.getenv("BREVO_API_KEY", "")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@socialweb.app")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
