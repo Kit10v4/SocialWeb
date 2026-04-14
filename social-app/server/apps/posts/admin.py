@@ -73,8 +73,8 @@ class PostAdmin(admin.ModelAdmin):
 
 @admin.register(PostImage)
 class PostImageAdmin(admin.ModelAdmin):
-    list_display = ("id", "post_link", "image_preview", "order", "created_at")
-    list_filter = ("created_at",)
+    list_display = ("id", "post_link", "image_preview", "order", "post_created_at")
+    list_filter = ("post__created_at",)
     raw_id_fields = ("post",)
 
     @admin.display(description="Post")
@@ -88,9 +88,9 @@ class PostImageAdmin(admin.ModelAdmin):
             return format_html('<img src="{}" width="60" height="60" style="object-fit:cover;border-radius:4px;" />', obj.image.url)
         return "-"
 
-    def created_at(self, obj):
+    @admin.display(description="Created", ordering="post__created_at")
+    def post_created_at(self, obj):
         return obj.post.created_at
-    created_at.short_description = "Created"
 
 
 @admin.register(Comment)
