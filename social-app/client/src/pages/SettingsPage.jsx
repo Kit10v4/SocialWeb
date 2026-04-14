@@ -150,9 +150,11 @@ export default function SettingsPage() {
     setDeleteLoading(true);
     try {
       await authAPI.deleteAccount({ password: deleteForm.password });
-      await logout();
+      // Don't call logout() API — user is already deleted on server
+      // Server already cleared cookies in the 204 response
       showToast("success", "Tài khoản đã được xoá");
-      navigate("/login");
+      // Clear client-side auth state without calling API
+      window.location.href = "/login";
     } catch (err) {
       const message = err.response?.data?.detail || "Không thể xoá tài khoản";
       showToast("error", message);

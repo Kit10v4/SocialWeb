@@ -352,9 +352,9 @@ class ForgotPasswordView(APIView):
                 f"?token={reset_token.token}"
             )
 
-            from django.core.mail import send_mail
+            from .utils import _send_mail_async
 
-            send_mail(
+            _send_mail_async(
                 subject="[SocialWeb] Đặt lại mật khẩu",
                 message=(
                     f"Xin chào {user.username},\n\n"
@@ -365,7 +365,6 @@ class ForgotPasswordView(APIView):
                 ),
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[email],
-                fail_silently=True,
             )
         except User.DoesNotExist:
             pass
@@ -590,7 +589,9 @@ class DeleteAccountView(APIView):
         # Delete user (cascade will handle related data)
         user.delete()
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        response = Response(status=status.HTTP_204_NO_CONTENT)
+        _clear_auth_cookies(response)
+        return response
 
 
 class MeView(generics.RetrieveUpdateAPIView):

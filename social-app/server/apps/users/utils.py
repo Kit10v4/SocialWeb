@@ -1,5 +1,6 @@
 import io
 import logging
+import threading
 
 from django.conf import settings
 from django.core.mail import send_mail
@@ -7,6 +8,8 @@ from django.core.files.uploadedfile import InMemoryUploadedFile
 from PIL import Image
 
 from .models import AuditLog, EmailVerificationToken
+
+logger = logging.getLogger(__name__)
 
 
 def resize_image(image_file, size=(400, 400)):
@@ -37,34 +40,46 @@ def resize_image(image_file, size=(400, 400)):
     )
 
 
+def _send_mail_async(subject, message, from_email, recipient_list):
+    """Gửi email trong background thread để không block Daphne event loop."""
+    def _send():
+        try:
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=from_email,
+                recipient_list=recipient_list,
+                fail_silently=False,
+            )
+            logger.info("Email sent to %s", recipient_list)
+        except Exception as e:
+            logger.error("Failed to send email to %s: %s", recipient_list, e)
+
+    thread = threading.Thread(target=_send, daemon=True)
+    thread.start()
+
+
 def send_verification_email(user):
-    """Gửi email xác minh tài khoản."""
-    logger = logging.getLogger(__name__)
-    
+    """Gửi email xác minh tài khoản (non-blocking)."""
     token_obj = EmailVerificationToken.create_for_user(user)
     verify_url = (
         f"{settings.FRONTEND_URL}/verify-email"
         f"?token={token_obj.token}"
     )
 
-    try:
-        send_mail(
-            subject="[SocialWeb] Xác minh địa chỉ email",
-            message=(
-                f"Chào {user.username},\n\n"
-                f"Cảm ơn bạn đã đăng ký SocialWeb!\n"
-                f"Nhấn vào link sau để xác minh email (hiệu lực 24 giờ):\n\n"
-                f"{verify_url}\n\n"
-                f"Nếu bạn không đăng ký tài khoản này, hãy bỏ qua email này.\n\n"
-                f"— Đội SocialWeb"
-            ),
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
-            fail_silently=False,
-        )
-        logger.info(f"Verification email sent to {user.email}")
-    except Exception as e:
-        logger.error(f"Failed to send verification email to {user.email}: {e}")
+    _send_mail_async(
+        subject="[SocialWeb] Xác minh địa chỉ email",
+        message=(
+            f"Chào {user.username},\n\n"
+            f"Cảm ơn bạn đã đăng ký SocialWeb!\n"
+            f"Nhấn vào link sau để xác minh email (hiệu lực 24 giờ):\n\n"
+            f"{verify_url}\n\n"
+            f"Nếu bạn không đăng ký tài khoản này, hãy bỏ qua email này.\n\n"
+            f"— Đội SocialWeb"
+        ),
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[user.email],
+    )
 
 
 def get_client_ip(request) -> str:
