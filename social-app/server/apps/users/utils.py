@@ -39,26 +39,32 @@ def resize_image(image_file, size=(400, 400)):
 
 def send_verification_email(user):
     """Gửi email xác minh tài khoản."""
+    logger = logging.getLogger(__name__)
+    
     token_obj = EmailVerificationToken.create_for_user(user)
     verify_url = (
         f"{settings.FRONTEND_URL}/verify-email"
         f"?token={token_obj.token}"
     )
 
-    send_mail(
-        subject="[SocialWeb] Xác minh địa chỉ email",
-        message=(
-            f"Chào {user.username},\n\n"
-            f"Cảm ơn bạn đã đăng ký SocialWeb!\n"
-            f"Nhấn vào link sau để xác minh email (hiệu lực 24 giờ):\n\n"
-            f"{verify_url}\n\n"
-            f"Nếu bạn không đăng ký tài khoản này, hãy bỏ qua email này.\n\n"
-            f"— Đội SocialWeb"
-        ),
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[user.email],
-        fail_silently=True,
-    )
+    try:
+        send_mail(
+            subject="[SocialWeb] Xác minh địa chỉ email",
+            message=(
+                f"Chào {user.username},\n\n"
+                f"Cảm ơn bạn đã đăng ký SocialWeb!\n"
+                f"Nhấn vào link sau để xác minh email (hiệu lực 24 giờ):\n\n"
+                f"{verify_url}\n\n"
+                f"Nếu bạn không đăng ký tài khoản này, hãy bỏ qua email này.\n\n"
+                f"— Đội SocialWeb"
+            ),
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            fail_silently=False,
+        )
+        logger.info(f"Verification email sent to {user.email}")
+    except Exception as e:
+        logger.error(f"Failed to send verification email to {user.email}: {e}")
 
 
 def get_client_ip(request) -> str:
