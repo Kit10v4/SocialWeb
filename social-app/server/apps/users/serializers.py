@@ -188,9 +188,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "friends_count",
             "posts_count",
             "friendship_status",
+            "is_staff",
+            "is_superuser",
             "created_at",
         )
-        read_only_fields = ("id", "email", "created_at")
+        read_only_fields = ("id", "email", "is_staff", "is_superuser", "created_at")
 
     # -- computed fields -----------------------------------------------------
 

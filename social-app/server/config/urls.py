@@ -40,6 +40,8 @@ urlpatterns = [
     path("api/", include("apps.feed.urls")),
     path("api/", include("apps.chat.urls")),
     path("api/", include("apps.notifications.urls")),
+    # Admin API for React Admin Panel
+    path("api/admin/", include("apps.users.admin_urls")),
 ]
 
 if "debug_toolbar" in settings.INSTALLED_APPS:

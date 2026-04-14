@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Home, MessageCircle, Users, LogOut, Bell, Settings } from "lucide-react";
+import { Home, MessageCircle, Users, LogOut, Bell, Settings, Shield } from "lucide-react";
 import NotificationBell from "../components/shared/NotificationBell";
 import BottomNav from "../components/shared/BottomNav";
 
@@ -338,6 +338,15 @@ export default function HomePage() {
                 {user?.username}
               </span>
             </Link>
+            {user?.is_staff && (
+              <Link
+                to="/admin"
+                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                title="Admin Panel"
+              >
+                <span className="text-lg">🛠️</span>
+              </Link>
+            )}
             <Link
               to="/settings"
               className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition"
@@ -414,6 +423,14 @@ export default function HomePage() {
               to="/settings"
               active={pathname === "/settings"}
             />
+            {user?.is_staff && (
+              <SidebarItem
+                icon={Shield}
+                label="Admin"
+                to="/admin"
+                active={pathname === "/admin"}
+              />
+            )}
           </nav>
         </aside>
 

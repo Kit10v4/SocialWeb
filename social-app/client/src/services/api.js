@@ -155,4 +155,23 @@ export const reportAPI = {
   create: (data) => api.post("/reports/", data),
 };
 
+// ── Admin API helpers ──────────────────────────────────────────────────
+export const adminAPI = {
+  // Dashboard stats
+  getStats: () => api.get("/admin/stats/"),
+  
+  // Users management
+  listUsers: (params) => api.get("/admin/users/", { params }),
+  getUser: (id) => api.get(`/admin/users/${id}/`),
+  updateUser: (id, data) => api.patch(`/admin/users/${id}/`, data),
+  userAction: (id, action) => api.post(`/admin/users/${id}/${action}/`),
+  
+  // Reports management
+  listReports: () => api.get("/admin/reports/"),
+  reportAction: (id, action) => api.post(`/admin/reports/${id}/${action}/`),
+  
+  // Audit logs
+  listAuditLogs: () => api.get("/admin/audit-logs/"),
+};
+
 export default api;
