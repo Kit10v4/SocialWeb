@@ -2,6 +2,7 @@ import io
 import logging
 import threading
 
+import requests as http_requests
 from django.conf import settings
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.core.mail import send_mail
@@ -41,7 +42,50 @@ def resize_image(image_file, size=(400, 400)):
 
 
 def _send_mail_sync(subject, message, from_email, recipient_list):
-    """Gửi email qua Django SMTP (Gmail) — đồng bộ, đảm bảo gửi xong."""
+    """Gửi email đồng bộ qua provider được cấu hình (smtp/sendgrid)."""
+    provider = getattr(settings, "EMAIL_PROVIDER", "smtp").strip().lower()
+    if provider == "sendgrid":
+        api_key = getattr(settings, "SENDGRID_API_KEY", "")
+        if not api_key:
+            logger.warning("SENDGRID_API_KEY not configured, skipping email to %s", recipient_list)
+            return False
+        if not from_email:
+            logger.warning("DEFAULT_FROM_EMAIL not configured, skipping email to %s", recipient_list)
+            return False
+
+        payload = {
+            "personalizations": [
+                {"to": [{"email": recipient} for recipient in recipient_list]}
+            ],
+            "from": {"email": from_email},
+            "subject": subject,
+            "content": [{"type": "text/plain", "value": message}],
+        }
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        }
+        try:
+            response = http_requests.post(
+                "https://api.sendgrid.com/v3/mail/send",
+                json=payload,
+                headers=headers,
+                timeout=10,
+            )
+            if 200 <= response.status_code < 300:
+                logger.info("Email sent to %s via SendGrid API", recipient_list)
+                return True
+            logger.error(
+                "SendGrid API failed for %s: status=%s body=%s",
+                recipient_list,
+                response.status_code,
+                response.text[:500],
+            )
+            return False
+        except Exception as e:
+            logger.error("SendGrid API error for %s: %s", recipient_list, e)
+            return False
+
     if not getattr(settings, "EMAIL_HOST_USER", ""):
         logger.warning("EMAIL_HOST_USER not configured, skipping email to %s", recipient_list)
         return False
@@ -54,7 +98,7 @@ def _send_mail_sync(subject, message, from_email, recipient_list):
             recipient_list=recipient_list,
             fail_silently=False,
         )
-        logger.info("Email sent to %s via Gmail SMTP", recipient_list)
+        logger.info("Email sent to %s via SMTP", recipient_list)
         return True
     except Exception as e:
         logger.error("Failed to send email to %s: %s", recipient_list, e)
