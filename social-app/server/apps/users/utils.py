@@ -2,7 +2,6 @@ import io
 import logging
 import threading
 
-import requests as http_requests
 from django.conf import settings
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.core.mail import send_mail
@@ -53,37 +52,30 @@ def _send_mail_sync(subject, message, from_email, recipient_list):
             logger.warning("DEFAULT_FROM_EMAIL not configured, skipping email to %s", recipient_list)
             return False
 
-        payload = {
-            "personalizations": [
-                {"to": [{"email": recipient} for recipient in recipient_list]}
-            ],
-            "from": {"email": from_email},
-            "subject": subject,
-            "content": [{"type": "text/plain", "value": message}],
-        }
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        }
         try:
-            response = http_requests.post(
-                "https://api.sendgrid.com/v3/mail/send",
-                json=payload,
-                headers=headers,
-                timeout=10,
+            from sendgrid import SendGridAPIClient
+            from sendgrid.helpers.mail import Mail
+
+            msg = Mail(
+                from_email=from_email,
+                to_emails=recipient_list,
+                subject=subject,
+                plain_text_content=message,
             )
+            client = SendGridAPIClient(api_key)
+            response = client.send(msg)
             if 200 <= response.status_code < 300:
-                logger.info("Email sent to %s via SendGrid API", recipient_list)
+                logger.info("Email sent to %s via SendGrid SDK", recipient_list)
                 return True
             logger.error(
-                "SendGrid API failed for %s: status=%s body=%s",
+                "SendGrid SDK failed for %s: status=%s body=%s",
                 recipient_list,
                 response.status_code,
-                response.text[:500],
+                response.body[:500],
             )
             return False
         except Exception as e:
-            logger.error("SendGrid API error for %s: %s", recipient_list, e)
+            logger.error("SendGrid SDK error for %s: %s", recipient_list, e)
             return False
 
     if not getattr(settings, "EMAIL_HOST_USER", ""):
