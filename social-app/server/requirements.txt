@@ -48,3 +48,4 @@ whitenoise==6.8.2
 django-ratelimit==4.1.0
 channels-redis==4.2.0
 redis==5.0.1
+sendgrid==6.11.0
