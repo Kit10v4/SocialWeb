@@ -907,6 +907,7 @@ class ReportUserView(APIView):
 
 class TestEmailView(APIView):
     """GET /api/test-email/?to=someone@gmail.com — debug email config."""
+    authentication_classes = []
     permission_classes = (AllowAny,)
 
     def get(self, request: Any) -> Response:
