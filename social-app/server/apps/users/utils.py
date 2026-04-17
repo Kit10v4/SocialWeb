@@ -76,24 +76,29 @@ def send_verification_email(user):
     from django.db import transaction
 
     def _do_send():
-        token_obj = EmailVerificationToken.create_for_user(user)
-        verify_url = (
-            f"{settings.FRONTEND_URL}/verify-email"
-            f"?token={token_obj.token}"
-        )
-        _send_mail_sync(
-            subject="[SocialWeb] Xác minh địa chỉ email",
-            message=(
-                f"Chào {user.username},\n\n"
-                f"Cảm ơn bạn đã đăng ký SocialWeb!\n"
-                f"Nhấn vào link sau để xác minh email (hiệu lực 24 giờ):\n\n"
-                f"{verify_url}\n\n"
-                f"Nếu bạn không đăng ký tài khoản này, hãy bỏ qua email này.\n\n"
-                f"— Đội SocialWeb"
-            ),
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
-        )
+        try:
+            from django.db import close_old_connections
+            close_old_connections()
+            token_obj = EmailVerificationToken.create_for_user(user)
+            verify_url = (
+                f"{settings.FRONTEND_URL}/verify-email"
+                f"?token={token_obj.token}"
+            )
+            _send_mail_sync(
+                subject="[SocialWeb] Xác minh địa chỉ email",
+                message=(
+                    f"Chào {user.username},\n\n"
+                    f"Cảm ơn bạn đã đăng ký SocialWeb!\n"
+                    f"Nhấn vào link sau để xác minh email (hiệu lực 24 giờ):\n\n"
+                    f"{verify_url}\n\n"
+                    f"Nếu bạn không đăng ký tài khoản này, hãy bỏ qua email này.\n\n"
+                    f"— Đội SocialWeb"
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+            )
+        except Exception as e:
+            logger.error("send_verification_email failed for %s: %s", user.email, e)
 
     def _send_in_thread():
         thread = threading.Thread(target=_do_send)
