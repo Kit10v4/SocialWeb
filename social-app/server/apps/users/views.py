@@ -353,19 +353,27 @@ class ForgotPasswordView(APIView):
             )
 
             from .utils import _send_mail_sync
+            import threading
 
-            _send_mail_sync(
-                subject="[SocialWeb] Đặt lại mật khẩu",
-                message=(
-                    f"Xin chào {user.username},\n\n"
-                    f"Nhấn vào link sau để đặt lại mật khẩu (hiệu lực 1 giờ):\n"
-                    f"{reset_url}\n\n"
-                    f"Nếu bạn không yêu cầu, hãy bỏ qua email này.\n\n"
-                    f"— Đội SocialWeb"
-                ),
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[email],
-            )
+            _user = user
+            _reset_url = reset_url
+            _email = email
+
+            def _send_reset():
+                _send_mail_sync(
+                    subject="[SocialWeb] Đặt lại mật khẩu",
+                    message=(
+                        f"Xin chào {_user.username},\n\n"
+                        f"Nhấn vào link sau để đặt lại mật khẩu (hiệu lực 1 giờ):\n"
+                        f"{_reset_url}\n\n"
+                        f"Nếu bạn không yêu cầu, hãy bỏ qua email này.\n\n"
+                        f"— Đội SocialWeb"
+                    ),
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[_email],
+                )
+
+            threading.Thread(target=_send_reset).start()
         except User.DoesNotExist:
             pass
 

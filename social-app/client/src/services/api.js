@@ -25,7 +25,9 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status !== 401 || originalRequest._retry) {
+    if (error.response?.status !== 401 || originalRequest._retry
+        || originalRequest.url?.includes('/auth/register/')
+        || originalRequest.url?.includes('/auth/login/')) {
       return Promise.reject(error);
     }
 
@@ -51,8 +53,9 @@ api.interceptors.response.use(
       return api(originalRequest);
     } catch (refreshError) {
       processQueue(refreshError);
-      // Tránh vòng lặp reload vô hạn khi đang ở trang /login.
-      if (window.location.pathname !== "/login") {
+      // Tránh vòng lặp reload vô hạn khi đang ở trang /login hoặc /register.
+      const path = window.location.pathname;
+      if (path !== "/login" && path !== "/register") {
         window.location.href = "/login";
       }
       return Promise.reject(refreshError);
