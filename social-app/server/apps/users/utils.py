@@ -72,14 +72,14 @@ def _send_mail_async(subject, message, from_email, recipient_list):
 
 
 def send_verification_email(user):
-    """Gửi email xác minh tài khoản (non-blocking)."""
+    """Gửi email xác minh tài khoản (đồng bộ để đảm bảo gửi được trên Render)."""
     token_obj = EmailVerificationToken.create_for_user(user)
     verify_url = (
         f"{settings.FRONTEND_URL}/verify-email"
         f"?token={token_obj.token}"
     )
 
-    _send_mail_async(
+    _send_mail_sync(
         subject="[SocialWeb] Xác minh địa chỉ email",
         message=(
             f"Chào {user.username},\n\n"
