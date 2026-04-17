@@ -2,9 +2,9 @@ import io
 import logging
 import threading
 
-import requests as http_requests
 from django.conf import settings
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.core.mail import send_mail
 from PIL import Image
 
 from .models import AuditLog, EmailVerificationToken
@@ -41,35 +41,21 @@ def resize_image(image_file, size=(400, 400)):
 
 
 def _send_mail_async(subject, message, from_email, recipient_list):
-    """Gửi email qua Brevo HTTP API trong background thread."""
+    """Gửi email qua Django SMTP (Gmail) trong background thread."""
     def _send():
-        api_key = getattr(settings, "BREVO_API_KEY", "")
-        if not api_key:
-            logger.warning("BREVO_API_KEY not configured, skipping email to %s", recipient_list)
+        if not getattr(settings, "EMAIL_HOST_USER", ""):
+            logger.warning("EMAIL_HOST_USER not configured, skipping email to %s", recipient_list)
             return
 
         try:
-            resp = http_requests.post(
-                "https://api.brevo.com/v3/smtp/email",
-                headers={
-                    "api-key": api_key,
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "sender": {"email": from_email},
-                    "to": [{"email": email} for email in recipient_list],
-                    "subject": subject,
-                    "textContent": message,
-                },
-                timeout=10,
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=from_email,
+                recipient_list=recipient_list,
+                fail_silently=False,
             )
-            if resp.status_code in (200, 201):
-                logger.info("Email sent to %s via Brevo", recipient_list)
-            else:
-                logger.error(
-                    "Brevo API error %s for %s: %s",
-                    resp.status_code, recipient_list, resp.text,
-                )
+            logger.info("Email sent to %s via Gmail SMTP", recipient_list)
         except Exception as e:
             logger.error("Failed to send email to %s: %s", recipient_list, e)
 

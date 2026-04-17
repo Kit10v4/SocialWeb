@@ -36,7 +36,9 @@ services:
         sync: false
       - key: RECAPTCHA_ENABLED
         value: "True"
-      - key: BREVO_API_KEY
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
         sync: false
       - key: DEFAULT_FROM_EMAIL
         sync: false

@@ -70,6 +70,7 @@ else:
 # ── reCAPTCHA ────────────────────────────────────────────────
 RECAPTCHA_ENABLED = True  # bắt buộc bật trên production
 
-# ── Email (Brevo HTTP API) ───────────────────────────────────
-BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "")
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "SocialWeb <noreply@socialweb.app>")
+# ── Email (Gmail SMTP) ───────────────────────────────────────
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)

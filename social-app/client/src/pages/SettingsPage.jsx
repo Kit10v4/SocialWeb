@@ -40,7 +40,8 @@ function getPasswordStrength(password) {
   if (/[^A-Za-z0-9]/.test(password)) score++;
 
   if (score <= 2) return { level: 1, label: "Yếu", color: "bg-red-500" };
-  if (score <= 4) return { level: 2, label: "Trung bình", color: "bg-yellow-500" };
+  if (score <= 4)
+    return { level: 2, label: "Trung bình", color: "bg-yellow-500" };
   return { level: 3, label: "Mạnh", color: "bg-green-500" };
 }
 
@@ -70,7 +71,9 @@ export default function SettingsPage() {
   });
 
   // Appearance section state
-  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "light");
+  const [theme, setTheme] = useState(
+    () => localStorage.getItem("theme") || "light",
+  );
   const [language, setLanguage] = useState("vi");
 
   // Delete account state
@@ -129,7 +132,11 @@ export default function SettingsPage() {
     setPasswordLoading(true);
     try {
       await authAPI.changePassword(passwordForm);
-      setPasswordForm({ current_password: "", new_password: "", confirm_password: "" });
+      setPasswordForm({
+        current_password: "",
+        new_password: "",
+        confirm_password: "",
+      });
       showToast("success", "Đổi mật khẩu thành công");
     } catch (err) {
       const message = err.response?.data?.detail || "Không thể đổi mật khẩu";
@@ -180,7 +187,9 @@ export default function SettingsPage() {
           >
             <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
           </Link>
-          <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Cài đặt</h1>
+          <h1 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+            Cài đặt
+          </h1>
         </div>
       </header>
 
@@ -239,7 +248,10 @@ export default function SettingsPage() {
                         type="email"
                         value={emailForm.new_email}
                         onChange={(e) =>
-                          setEmailForm({ ...emailForm, new_email: e.target.value })
+                          setEmailForm({
+                            ...emailForm,
+                            new_email: e.target.value,
+                          })
                         }
                         className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                         placeholder="example@email.com"
@@ -253,7 +265,10 @@ export default function SettingsPage() {
                         type="password"
                         value={emailForm.password}
                         onChange={(e) =>
-                          setEmailForm({ ...emailForm, password: e.target.value })
+                          setEmailForm({
+                            ...emailForm,
+                            password: e.target.value,
+                          })
                         }
                         className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                         placeholder="Nhập mật khẩu hiện tại"
@@ -264,7 +279,9 @@ export default function SettingsPage() {
                       disabled={emailLoading}
                       className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-lg transition flex items-center gap-2"
                     >
-                      {emailLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                      {emailLoading && (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      )}
                       Lưu thay đổi
                     </button>
                   </div>
@@ -373,8 +390,8 @@ export default function SettingsPage() {
                                 passwordStrength.level === 1
                                   ? "text-red-500"
                                   : passwordStrength.level === 2
-                                  ? "text-yellow-500"
-                                  : "text-green-500"
+                                    ? "text-yellow-500"
+                                    : "text-green-500"
                               }`}
                             >
                               {passwordStrength.label}
@@ -420,7 +437,8 @@ export default function SettingsPage() {
                         </button>
                       </div>
                       {passwordForm.confirm_password &&
-                        passwordForm.new_password !== passwordForm.confirm_password && (
+                        passwordForm.new_password !==
+                          passwordForm.confirm_password && (
                           <p className="text-xs text-red-500 mt-1">
                             Mật khẩu không khớp
                           </p>
@@ -432,7 +450,9 @@ export default function SettingsPage() {
                       disabled={passwordLoading}
                       className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-lg transition flex items-center gap-2"
                     >
-                      {passwordLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                      {passwordLoading && (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      )}
                       Đổi mật khẩu
                     </button>
                   </div>
@@ -518,7 +538,8 @@ export default function SettingsPage() {
                 Xoá tài khoản
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Sau khi xoá, tất cả dữ liệu của bạn sẽ bị xoá vĩnh viễn và không thể khôi phục.
+                Sau khi xoá, tất cả dữ liệu của bạn sẽ bị xoá vĩnh viễn và không
+                thể khôi phục.
               </p>
               <button
                 onClick={() => setShowDeleteModal(true)}
@@ -549,14 +570,16 @@ export default function SettingsPage() {
             </div>
 
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Hành động này không thể hoàn tác. Toàn bộ bài viết, tin nhắn và dữ liệu của bạn sẽ bị xoá vĩnh viễn.
+              Hành động này không thể hoàn tác. Toàn bộ bài viết, tin nhắn và dữ
+              liệu của bạn sẽ bị xoá vĩnh viễn.
             </p>
 
             <form onSubmit={handleDeleteAccount}>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
-                    Nhập <span className="font-semibold">{user?.username}</span> để xác nhận
+                    Nhập <span className="font-semibold">{user?.username}</span>{" "}
+                    để xác nhận
                   </label>
                   <input
                     type="text"
@@ -600,7 +623,9 @@ export default function SettingsPage() {
                     }
                     className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-300 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition flex items-center justify-center gap-2"
                   >
-                    {deleteLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                    {deleteLoading && (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    )}
                     Xoá tài khoản
                   </button>
                 </div>
