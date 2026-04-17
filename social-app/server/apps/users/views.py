@@ -34,7 +34,7 @@ from .serializers import (
     UserMiniSerializer,
     UserProfileSerializer,
 )
-from .utils import resize_image, send_verification_email
+from .utils import resize_image, send_verification_email, _send_mail_sync
 from .utils import log_audit_event
 
 
@@ -903,3 +903,36 @@ class ReportUserView(APIView):
             defaults={'reason': reason, 'detail': detail}
         )
         return Response({'detail': 'Report submitted.'}, status=status.HTTP_201_CREATED)
+
+
+class TestEmailView(APIView):
+    """GET /api/test-email/?to=someone@gmail.com — debug email config."""
+    permission_classes = (AllowAny,)
+
+    def get(self, request: Any) -> Response:
+        to_email = request.query_params.get("to", "")
+        if not to_email:
+            return Response({"detail": "?to=email required"}, status=400)
+
+        config = {
+            "EMAIL_BACKEND": getattr(settings, "EMAIL_BACKEND", "NOT SET"),
+            "EMAIL_HOST": getattr(settings, "EMAIL_HOST", "NOT SET"),
+            "EMAIL_PORT": getattr(settings, "EMAIL_PORT", "NOT SET"),
+            "EMAIL_USE_TLS": getattr(settings, "EMAIL_USE_TLS", "NOT SET"),
+            "EMAIL_HOST_USER": getattr(settings, "EMAIL_HOST_USER", "")[:5] + "***" if getattr(settings, "EMAIL_HOST_USER", "") else "EMPTY",
+            "EMAIL_HOST_PASSWORD": "SET" if getattr(settings, "EMAIL_HOST_PASSWORD", "") else "EMPTY",
+            "DEFAULT_FROM_EMAIL": getattr(settings, "DEFAULT_FROM_EMAIL", "NOT SET"),
+        }
+
+        success = _send_mail_sync(
+            subject="[SocialWeb] Test Email",
+            message="Nếu bạn nhận được email này, Gmail SMTP đã hoạt động!",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[to_email],
+        )
+
+        return Response({
+            "config": config,
+            "email_sent": success,
+            "to": to_email,
+        })

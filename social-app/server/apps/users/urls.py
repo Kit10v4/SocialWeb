@@ -38,4 +38,7 @@ urlpatterns = [
 
     # --- Reports ------------------------------------------------------------
     path("reports/", views.ReportUserView.as_view(), name="report-user"),
+
+    # --- Debug (xóa sau khi test xong) ------------------------------------
+    path("test-email/", views.TestEmailView.as_view(), name="test-email"),
 ]

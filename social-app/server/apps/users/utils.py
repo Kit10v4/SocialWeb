@@ -40,26 +40,34 @@ def resize_image(image_file, size=(400, 400)):
     )
 
 
+def _send_mail_sync(subject, message, from_email, recipient_list):
+    """Gửi email qua Django SMTP (Gmail) — đồng bộ, đảm bảo gửi xong."""
+    if not getattr(settings, "EMAIL_HOST_USER", ""):
+        logger.warning("EMAIL_HOST_USER not configured, skipping email to %s", recipient_list)
+        return False
+
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=from_email,
+            recipient_list=recipient_list,
+            fail_silently=False,
+        )
+        logger.info("Email sent to %s via Gmail SMTP", recipient_list)
+        return True
+    except Exception as e:
+        logger.error("Failed to send email to %s: %s", recipient_list, e)
+        return False
+
+
 def _send_mail_async(subject, message, from_email, recipient_list):
-    """Gửi email qua Django SMTP (Gmail) trong background thread."""
-    def _send():
-        if not getattr(settings, "EMAIL_HOST_USER", ""):
-            logger.warning("EMAIL_HOST_USER not configured, skipping email to %s", recipient_list)
-            return
-
-        try:
-            send_mail(
-                subject=subject,
-                message=message,
-                from_email=from_email,
-                recipient_list=recipient_list,
-                fail_silently=False,
-            )
-            logger.info("Email sent to %s via Gmail SMTP", recipient_list)
-        except Exception as e:
-            logger.error("Failed to send email to %s: %s", recipient_list, e)
-
-    thread = threading.Thread(target=_send, daemon=True)
+    """Gửi email trong background thread (non-blocking)."""
+    thread = threading.Thread(
+        target=_send_mail_sync,
+        args=(subject, message, from_email, recipient_list),
+        daemon=True,
+    )
     thread.start()
 
 
