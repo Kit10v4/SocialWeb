@@ -70,7 +70,11 @@ else:
 # ── reCAPTCHA ────────────────────────────────────────────────
 RECAPTCHA_ENABLED = True  # bắt buộc bật trên production
 
-# ── Email (Gmail SMTP) ───────────────────────────────────────
+# ── Email ────────────────────────────────────────────────────
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER)
+
+SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY", "")
+# Tự động dùng SendGrid nếu có API key, ngược lại fallback SMTP
+EMAIL_PROVIDER = "sendgrid" if SENDGRID_API_KEY else "smtp"
