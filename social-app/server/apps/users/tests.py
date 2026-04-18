@@ -48,6 +48,19 @@ class RegisterViewTests(APITestCase):
         self.assertIn("email", response.data)
         self.assertTrue(User.objects.filter(email="ok@example.com").exists())
 
+    def test_register_with_invalid_authorization_header_still_works(self):
+        payload = self._register_payload(
+            email="header@example.com",
+            username="headeruser",
+        )
+        response = self.client.post(
+            "/api/auth/register/",
+            payload,
+            format="json",
+            HTTP_AUTHORIZATION="Bearer invalid-token",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
 
 @override_settings(RECAPTCHA_ENABLED=False)
 class AuthCookieFlowTests(APITestCase):

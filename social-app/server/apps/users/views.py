@@ -109,6 +109,7 @@ def get_login_key(group: str, request: Any) -> str:
 )
 class RegisterView(APIView):
     permission_classes = (AllowAny,)
+    authentication_classes = ()
 
     def post(self, request: Any) -> Response:
         serializer = RegisterSerializer(data=request.data)
@@ -152,6 +153,7 @@ class RegisterView(APIView):
 )
 class LoginView(APIView):
     permission_classes = (AllowAny,)
+    authentication_classes = ()
 
     def post(self, request: Any) -> Response:
         serializer = LoginSerializer(data=request.data)
@@ -194,6 +196,7 @@ class CustomTokenRefreshView(APIView):
     """POST /api/auth/refresh/ — dùng refresh_token cookie."""
 
     permission_classes = (AllowAny,)
+    authentication_classes = ()
 
     def post(self, request: Any) -> Response:
         refresh_token = request.COOKIES.get("refresh_token")
@@ -236,6 +239,7 @@ class VerifyEmailView(APIView):
     """GET /api/auth/verify-email/?token=..."""
 
     permission_classes = (AllowAny,)
+    authentication_classes = ()
 
     def get(self, request: Any) -> Response:
         token_str = request.query_params.get("token", "").strip()
@@ -286,6 +290,7 @@ class ResendVerificationView(APIView):
     """POST /api/auth/resend-verification/ {"email": "..."}"""
 
     permission_classes = (AllowAny,)
+    authentication_classes = ()
 
     def post(self, request: Any) -> Response:
         email = request.data.get("email", "").strip().lower()
@@ -330,6 +335,7 @@ class ForgotPasswordView(APIView):
     """
 
     permission_classes = (AllowAny,)
+    authentication_classes = ()
 
     @method_decorator(
         ratelimit(key="ip", rate="3/m", method="POST", block=True),
@@ -394,6 +400,7 @@ class ResetPasswordView(APIView):
     """
 
     permission_classes = (AllowAny,)
+    authentication_classes = ()
 
     def post(self, request: Any) -> Response:
         token_str = request.data.get("token", "").strip()

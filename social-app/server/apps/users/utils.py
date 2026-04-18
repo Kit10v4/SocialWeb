@@ -64,6 +64,14 @@ def _send_mail_sync(subject, message, from_email, recipient_list):
             )
             client = SendGridAPIClient(api_key)
             response = client.send(msg)
+            print("=== SENDGRID DEBUG ===")
+            print(f"Status: {response.status_code}")
+            body = (
+                response.body.decode("utf-8", errors="replace")
+                if isinstance(response.body, (bytes, bytearray))
+                else str(response.body)
+            )
+            print(f"Body: {body}")
             if 200 <= response.status_code < 300:
                 logger.info("Email sent to %s via SendGrid SDK", recipient_list)
                 return True
