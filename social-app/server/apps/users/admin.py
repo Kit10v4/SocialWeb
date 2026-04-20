@@ -215,6 +215,6 @@ class EmailVerificationTokenAdmin(admin.ModelAdmin):
 
 
 # ── Customize Admin Site ─────────────────────────────────────────────
-admin.site.site_header = "SocialWeb Administration"
-admin.site.site_title = "SocialWeb Admin"
+admin.site.site_header = "Connect Administration"
+admin.site.site_title = "Connect Admin"
 admin.site.index_title = "Dashboard"

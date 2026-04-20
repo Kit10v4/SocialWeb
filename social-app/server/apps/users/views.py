@@ -367,13 +367,13 @@ class ForgotPasswordView(APIView):
 
             def _send_reset():
                 _send_mail_sync(
-                    subject="[SocialWeb] Đặt lại mật khẩu",
+                    subject="[Connect] Đặt lại mật khẩu",
                     message=(
                         f"Xin chào {_user.username},\n\n"
                         f"Nhấn vào link sau để đặt lại mật khẩu (hiệu lực 1 giờ):\n"
                         f"{_reset_url}\n\n"
                         f"Nếu bạn không yêu cầu, hãy bỏ qua email này.\n\n"
-                        f"— Đội SocialWeb"
+                        f"— Đội Connect"
                     ),
                     from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[_email],

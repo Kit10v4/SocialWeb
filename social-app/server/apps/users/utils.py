@@ -129,14 +129,14 @@ def send_verification_email(user):
                 f"?token={token_obj.token}"
             )
             _send_mail_sync(
-                subject="[SocialWeb] Xác minh địa chỉ email",
+                subject="[Connect] Xác minh địa chỉ email",
                 message=(
                     f"Chào {user.username},\n\n"
-                    f"Cảm ơn bạn đã đăng ký SocialWeb!\n"
+                    f"Cảm ơn bạn đã đăng ký Connect!\n"
                     f"Nhấn vào link sau để xác minh email (hiệu lực 24 giờ):\n\n"
                     f"{verify_url}\n\n"
                     f"Nếu bạn không đăng ký tài khoản này, hãy bỏ qua email này.\n\n"
-                    f"— Đội SocialWeb"
+                    f"— Đội Connect"
                 ),
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[user.email],

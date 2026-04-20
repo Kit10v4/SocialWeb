@@ -249,9 +249,9 @@ export default function RegisterForm() {
       <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
         <div className="text-center mb-8">
           <div className="mx-auto mb-3 h-14 w-14 rounded-full bg-blue-600 text-white flex items-center justify-center text-2xl font-bold">
-            S
+            C
           </div>
-          <h1 className="text-3xl font-bold text-blue-600 dark:text-blue-400">SocialWeb</h1>
+          <h1 className="text-3xl font-bold text-blue-600 dark:text-blue-400">Connect</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-2">Tạo tài khoản mới</p>
         </div>
 

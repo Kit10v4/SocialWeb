@@ -1,4 +1,4 @@
-# SocialWeb 🌐
+# Connect 🌐
 
 Mạng xã hội full-stack hiện đại xây dựng với **Django + React**, hỗ trợ chat real-time, news feed, thông báo tức thì và nhiều tính năng tương tự Facebook.
 

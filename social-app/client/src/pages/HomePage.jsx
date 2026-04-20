@@ -28,7 +28,7 @@ export default function HomePage() {
     if (pathname.startsWith("/messages")) return "Tin nhắn";
     if (pathname.startsWith("/profile")) return "Trang cá nhân";
     if (pathname.startsWith("/post")) return "Chi tiết bài viết";
-    return "Social App";
+    return "Connect";
   }, [pathname]);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -302,11 +302,11 @@ export default function HomePage() {
           <span className="text-lg sm:text-xl font-bold text-blue-600 min-w-[60px]">
             {pathname === "/" ? (
               <>
-                <span className="sm:hidden">SA</span>
-                <span className="hidden sm:inline">Social App</span>
+                <span className="sm:hidden">C</span>
+                <span className="hidden sm:inline">Connect</span>
               </>
             ) : (
-              <span className="sm:hidden">SA</span>
+              <span className="sm:hidden">C</span>
             )}
           </span>
           {pathname !== "/" && (

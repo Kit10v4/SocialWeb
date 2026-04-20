@@ -1,6 +1,6 @@
 {
-  "name": "SocialWeb",
-  "short_name": "SocialWeb",
+  "name": "Connect",
+  "short_name": "Connect",
   "description": "Mạng xã hội hiện đại",
   "start_url": "/",
   "display": "standalone",

@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:16
-    container_name: socialweb-db
+    container_name: connect-db
     restart: unless-stopped
     environment:
       POSTGRES_DB: social_app_db
@@ -14,7 +14,7 @@ services:
 
   redis:
     image: redis:7
-    container_name: socialweb-redis
+    container_name: connect-redis
     restart: unless-stopped
     ports:
       - "6379:6379"
@@ -23,7 +23,7 @@ services:
 
   backend:
     image: python:3.11-slim
-    container_name: socialweb-backend
+    container_name: connect-backend
     working_dir: /app/server
     restart: unless-stopped
     depends_on:
@@ -52,7 +52,7 @@ services:
 
   frontend:
     image: node:20-alpine
-    container_name: socialweb-frontend
+    container_name: connect-frontend
     working_dir: /app/client
     restart: unless-stopped
     depends_on:
