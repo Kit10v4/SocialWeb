@@ -133,10 +133,7 @@ class RegisterView(APIView):
         )
         return Response(
             {
-                "detail": (
-                    "Đăng ký thành công! Vui lòng kiểm tra email "
-                    f"{user.email} để xác minh tài khoản."
-                ),
+                "detail": "Đăng ký thành công! Bạn có thể đăng nhập ngay.",
                 "email": user.email,
             },
             status=status.HTTP_201_CREATED,

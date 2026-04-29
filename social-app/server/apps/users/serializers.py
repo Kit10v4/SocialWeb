@@ -93,15 +93,15 @@ class RegisterSerializer(serializers.Serializer):
 
         user = User.objects.create_user(
             **validated_data,
-            is_active=False,
+            is_active=True,  # TODO: set back to False when email verification is re-enabled
         )
         if terms_accepted:
             user.terms_accepted_at = timezone.now()
             user.save(update_fields=["terms_accepted_at"])
 
-        from .utils import send_verification_email
-
-        send_verification_email(user)
+        # TODO: re-enable email verification
+        # from .utils import send_verification_email
+        # send_verification_email(user)
         return user
 
 
