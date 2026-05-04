@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { chatAPI } from "../services/api";
+import { authAPI, chatAPI } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
 /**
@@ -101,7 +101,18 @@ export function useChat(conversationId) {
 
     let cancelled = false;
 
-    const connect = () => {
+    const connect = async () => {
+      if (cancelled) return;
+
+      // Ensure the access-token cookie is still valid before opening the
+      // WebSocket. The axios interceptor will silently refresh it on 401.
+      try {
+        await authAPI.getMe();
+      } catch {
+        // Not authenticated – do not attempt to connect.
+        return;
+      }
+
       if (cancelled) return;
 
       // Use VITE_WS_URL for production, fallback to current host for dev
