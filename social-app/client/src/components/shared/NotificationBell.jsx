@@ -226,16 +226,10 @@ export default function NotificationBell() {
   useEffect(() => {
     if (!user) return;
 
-    const token = localStorage.getItem("access_token");
-    if (!token) return;
-
     let cancelled = false;
 
     const connect = () => {
       if (cancelled || !user) return;
-
-      const access = localStorage.getItem("access_token");
-      if (!access) return;
 
       // Use VITE_WS_URL for production, fallback to current host for dev
       const wsBase = import.meta.env.VITE_WS_URL;
@@ -248,7 +242,11 @@ export default function NotificationBell() {
         base = `${protocol}://${loc.host}`;
       }
       const url = new URL(`${base}/ws/notifications/`);
-      url.searchParams.set("token", access);
+      const token = localStorage.getItem("access_token");
+      if (token) {
+        // Backward compatibility when token is still exposed to JS.
+        url.searchParams.set("token", token);
+      }
 
       const ws = new WebSocket(url.toString());
       socketRef.current = ws;

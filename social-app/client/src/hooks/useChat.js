@@ -104,12 +104,6 @@ export function useChat(conversationId) {
     const connect = () => {
       if (cancelled) return;
 
-      const token = localStorage.getItem("access_token");
-      if (!token) {
-        setError("Missing access token.");
-        return;
-      }
-
       // Use VITE_WS_URL for production, fallback to current host for dev
       const wsBase = import.meta.env.VITE_WS_URL;
       let base;
@@ -121,7 +115,11 @@ export function useChat(conversationId) {
         base = `${protocol}://${loc.host}`;
       }
       const url = new URL(`${base}/ws/chat/${conversationId}/`);
-      url.searchParams.set("token", token);
+      const token = localStorage.getItem("access_token");
+      if (token) {
+        // Backward compatibility when token is still exposed to JS.
+        url.searchParams.set("token", token);
+      }
 
       const ws = new WebSocket(url.toString());
       socketRef.current = ws;
